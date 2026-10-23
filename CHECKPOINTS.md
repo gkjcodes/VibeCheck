@@ -1,6 +1,6 @@
-# VibeShield Phase Checkpoint System
+# VibeCheck Phase Checkpoint System
 
-This document outlines the requirements, gate criteria, and expected verification evidence for each of the seven development phases of **VibeShield**.
+This document outlines the requirements, gate criteria, and expected verification evidence for each of the seven development phases of **VibeCheck**.
 
 The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic verification at every phase boundary.
 
@@ -25,11 +25,11 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 |---|---|---|---|
 | **Phase 1** | Foundation & Contracts | Models, contracts, `/health`, test baseline | **PASSED** |
 | **Phase 2** | Secure Source Code Intake | ZIP upload, archive safety, limits, sandboxing | **PASSED** |
-| **Phase 3** | Security Scanner Integration | Rule engine, AST/heuristics, secret masking | **PLANNED** |
-| **Phase 4** | Findings & Remediation | Finding deduplication, AI repair prompt | **BLOCKED (Phase 3)** |
-| **Phase 5** | Rescan Comparison | Baseline scan vs rescan diffing, state transitions | **BLOCKED (Phase 3)** |
-| **Phase 6** | End-to-End MVP | Full journey from archive submission to rescan diff | **BLOCKED (Phase 3)** |
-| **Phase 7** | Release Gate | Full test suite, prerequisite checks, git/env audit | **BLOCKED (Phase 3)** |
+| **Phase 3** | Security Scanner Integration | Rule engine, text analysis, secret masking | **PASSED** |
+| **Phase 4** | Findings & Remediation | Finding deduplication, AI repair prompt | **PLANNED** (Next) |
+| **Phase 5** | Rescan Comparison | Baseline scan vs rescan diffing, state transitions | **BLOCKED (Phase 4)** |
+| **Phase 6** | End-to-End MVP | Full journey from archive submission to rescan diff | **BLOCKED (Phase 4)** |
+| **Phase 7** | Release Gate | Full test suite, prerequisite checks, git/env audit | **BLOCKED (Phase 4)** |
 
 ---
 
@@ -106,7 +106,7 @@ After completing a development phase:
 ---
 
 ### Phase 3: Security Scanner Integration
-- **Status**: **PLANNED** (Next Recommended Phase)
+- **Status**: **PASSED**
 - **Objective**: Integrate deterministic static analysis heuristics and rule adapters for common vibe-coded vulnerabilities.
 - **Requirements**:
   1. Scanner engine executes against isolated source trees.
@@ -118,12 +118,13 @@ After completing a development phase:
   7. Evaluates sample corrected fixtures (`samples/corrected/`) to confirm expected clean status.
   8. Automated scanner tests in `backend/tests/test_scanners.py` pass.
 - **Evidence**:
-  - `py scripts/phase_check.py 3` exits with code `0`.
+  - `py scripts/phase_check.py 3` exits with code `0` (9/9 checks passing).
+  - 16 automated tests in `backend/tests/test_scanners.py` pass.
 
 ---
 
 ### Phase 4: Findings & Consolidated Remediation
-- **Status**: **BLOCKED (Requires Phase 3)**
+- **Status**: **PLANNED (Next Recommended Phase)**
 - **Objective**: Synthesize actionable findings, deduplicate issues, and generate one unified repair prompt for AI coding tools.
 - **Requirements**:
   1. Findings include complete metadata: impact, severity, confidence, recommendation, and verification steps.

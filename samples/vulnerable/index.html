@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vulnerable Vibe Landing Page</title>
+    <!-- Insecure cleartext HTTP script inclusion -->
+    <script src="http://insecure-cdn-scripts.net/tracker.js"></script>
+</head>
+<body>
+    <h1>Welcome to Vibe Store</h1>
+    <!-- Inline JavaScript event handler -->
+    <button onclick="alert('clicked')">Click me</button>
+</body>
+</html>

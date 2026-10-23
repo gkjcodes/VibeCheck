@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VibeShield Phase Checkpoint Runner & All-Phase Dashboard.
+"""VibeCheck Phase Checkpoint Runner & All-Phase Dashboard.
 
 Executes phase gates 1 through 7 deterministically using the current Python
 interpreter, reporting PASS, FAIL, NOT IMPLEMENTED, or BLOCKED for each feature check.
@@ -31,7 +31,7 @@ def print_banner(text: str) -> None:
 
 
 def print_usage() -> None:
-    print("VibeShield Phase Checkpoint Runner")
+    print("VibeCheck Phase Checkpoint Runner")
     print("\nUsage:")
     print("    py scripts/phase_check.py              # Run all-phase dashboard")
     print("    py scripts/phase_check.py --all        # Run all-phase dashboard")
@@ -53,7 +53,7 @@ def run_phase_checkpoint(phase_num: int) -> int:
         print_usage()
         return 2
 
-    print_banner(f"VibeShield Checkpoint Gate: {checker.phase_name}")
+    print_banner(f"VibeCheck Checkpoint Gate: {checker.phase_name}")
 
     try:
         results = checker.run_all()
@@ -102,7 +102,7 @@ def run_all_phase_dashboard() -> int:
     
     Returns 0 if all phases pass; 1 otherwise.
     """
-    print_banner("VibeShield All-Phase Status Dashboard")
+    print_banner("VibeCheck All-Phase Status Dashboard")
 
     phase_results: Dict[int, Tuple[CheckStatus, str]] = {}
     prerequisite_failed: Optional[int] = None

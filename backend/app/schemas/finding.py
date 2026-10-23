@@ -1,4 +1,4 @@
-"""Security finding Pydantic model for VibeShield."""
+"""Security finding Pydantic model for VibeCheck."""
 
 from typing import List, Optional
 from pydantic import BaseModel, Field

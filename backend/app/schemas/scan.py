@@ -1,4 +1,4 @@
-"""Scan response Pydantic model for VibeShield."""
+"""Scan response Pydantic model for VibeCheck."""
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
@@ -30,7 +30,7 @@ class ScanCoverage(BaseModel):
 
 
 class ScanResponse(BaseModel):
-    """Consolidated scan response payload returned by VibeShield."""
+    """Consolidated scan response payload returned by VibeCheck."""
 
     scan_id: str = Field(
         ...,

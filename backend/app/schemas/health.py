@@ -15,7 +15,7 @@ class HealthResponse(BaseModel):
         description="Boolean readiness indicator for health probes",
     )
     service: str = Field(
-        default="VibeShield API",
+        default="VibeCheck API",
         description="Name of the backend service",
     )
     version: str = Field(

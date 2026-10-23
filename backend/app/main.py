@@ -1,4 +1,4 @@
-"""VibeShield FastAPI application entrypoint."""
+"""VibeCheck FastAPI application entrypoint."""
 
 from fastapi import FastAPI
 
@@ -6,7 +6,7 @@ from backend.app.api.router import api_router
 from backend.app.schemas.health import HealthResponse
 
 app = FastAPI(
-    title="VibeShield API",
+    title="VibeCheck API",
     description="AI Security Reviewer for Vibe-Coded Websites",
     version="0.1.0",
 )
@@ -18,7 +18,7 @@ def get_health() -> HealthResponse:
     return HealthResponse(
         status="ready",
         ready=True,
-        service="VibeShield API",
+        service="VibeCheck API",
         version="0.1.0",
     )
 

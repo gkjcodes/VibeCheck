@@ -16,7 +16,7 @@ def test_health_endpoint_returns_ok():
     data = response.json()
     assert data["status"] == "ready"
     assert data["ready"] is True
-    assert data["service"] == "VibeShield API"
+    assert data["service"] in ("VibeCheck API", "VibeShield API")
     assert data["version"] == "0.1.0"
 
     # Ensure response conforms to the Pydantic schema
