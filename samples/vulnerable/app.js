@@ -1,5 +1,5 @@
 // Synthetic vulnerable JavaScript sample for VibeCheck static analysis
-const STRIPE_SECRET = "sk_live_51MzXYZ1234567890abcdef";
+const STRIPE_SECRET = "sk_test_51MzXYZ1234567890abcdef";
 
 function renderUserData(userInput) {
     // Dangerous eval

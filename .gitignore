@@ -47,3 +47,6 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# Review and audit text bundles
+*-review-bundle.txt

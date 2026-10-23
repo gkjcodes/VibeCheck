@@ -122,8 +122,8 @@ def test_phase_check_cli_dashboard_no_args():
     script_path = REPO_ROOT / "scripts" / "phase_check.py"
     cmd = [sys.executable, str(script_path)]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
-    # Exits 1 because phase 7 is not yet passing
-    assert proc.returncode == 1
+    # Exits 0 because all 7 phases pass completely
+    assert proc.returncode == 0
     assert "All-Phase Status Dashboard" in proc.stdout
     assert "Phase 1: Foundation & Contracts" in proc.stdout
     assert "Phase 2: Secure Source Code Intake" in proc.stdout
@@ -131,8 +131,9 @@ def test_phase_check_cli_dashboard_no_args():
     assert "Phase 4: Findings & Consolidated Remediation" in proc.stdout
     assert "Phase 5: Rescan Comparison & Verification" in proc.stdout
     assert "Phase 6: End-to-End MVP Integration" in proc.stdout
-    assert "6/7 phases passed" in proc.stdout
-    assert "Next Phase:      Phase 7: Production Readiness & Release Gate" in proc.stdout
+    assert "Phase 7: Production Readiness & Release Gate" in proc.stdout
+    assert "7/7 phases passed" in proc.stdout
+    assert "Next Phase:      None (All phases complete!)" in proc.stdout
 
 
 def test_phase_check_cli_dashboard_all_flag():
@@ -140,11 +141,11 @@ def test_phase_check_cli_dashboard_all_flag():
     script_path = REPO_ROOT / "scripts" / "phase_check.py"
     cmd = [sys.executable, str(script_path), "--all"]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
-    assert proc.returncode == 1
+    assert proc.returncode == 0
     assert "All-Phase Status Dashboard" in proc.stdout
-    assert "Phase 6: End-to-End MVP Integration" in proc.stdout
-    assert "6/7 phases passed" in proc.stdout
-    assert "Next Phase:      Phase 7: Production Readiness & Release Gate" in proc.stdout
+    assert "Phase 7: Production Readiness & Release Gate" in proc.stdout
+    assert "7/7 phases passed" in proc.stdout
+    assert "Next Phase:      None (All phases complete!)" in proc.stdout
 
 
 def test_phase_check_cli_invalid_phase_number():

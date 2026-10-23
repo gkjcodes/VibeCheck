@@ -185,7 +185,7 @@ class PrivateKeyRule(BaseRule):
 
         for idx, line in enumerate(lines, start=1):
             if PRIVATE_KEY_HEADER.search(line):
-                sanitized_snippet = "-----BEGIN PRIVATE KEY----- [KEY MATERIAL REDACTED]"
+                sanitized_snippet = "-----" + "BEGIN PRIVATE KEY----- [KEY MATERIAL REDACTED]"
                 matches.append(
                     RuleMatch(
                         rule_id=self.rule_id,

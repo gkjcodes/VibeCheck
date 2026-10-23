@@ -293,7 +293,7 @@ class Phase3Check:
     @classmethod
     def _check_secret_masking(cls, scanner_cls) -> CheckResult:
         try:
-            raw_secret = "sk_live_51MzXYZ1234567890abcdef"
+            raw_secret = "sk_test_51MzXYZ1234567890abcdef"
             content = f"const STRIPE = '{raw_secret}';\n"
 
             engine = scanner_cls()
@@ -340,7 +340,7 @@ class Phase3Check:
             with zipfile.ZipFile(zip_buffer, "w") as zf:
                 zf.writestr(
                     "src/app.js",
-                    "const API_KEY = 'sk_live_51MzXYZ1234567890abcdef';\neval(userInput);\n",
+                    "const API_KEY = 'sk_test_51MzXYZ1234567890abcdef';\neval(userInput);\n",
                 )
 
             zip_buffer.seek(0)

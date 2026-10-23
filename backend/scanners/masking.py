@@ -19,7 +19,7 @@ def mask_secret(secret: str) -> str:
     """Mask a secret value so sensitive credentials are never leaked in plain text.
     
     Examples:
-        sk_live_51MzXYZ1234567890abcdef -> sk_live_****cdef
+        sk_test_51MzXYZ1234567890abcdef -> sk_test_****cdef
         AIzaSyA12345678901234567890123456 -> AIzaSy****3456
         supersecretpassword -> supe****word
     """

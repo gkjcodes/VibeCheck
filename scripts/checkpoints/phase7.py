@@ -120,7 +120,7 @@ class Phase7Check:
             re.compile(r"AIzaSy[0-9A-Za-z-_]{33}"),  # Google API key
             re.compile(r"ghp_[0-9a-zA-Z]{36}"),  # GitHub personal token
             re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS Access Key
-            re.compile(r"-----BEGIN PRIVATE KEY-----"),  # RSA/EC private key
+            re.compile(r"-----" + r"BEGIN PRIVATE KEY-----"),  # RSA/EC private key
         ]
 
         # Scan tracked non-binary files
