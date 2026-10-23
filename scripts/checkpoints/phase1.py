@@ -27,7 +27,7 @@ class Phase1Check:
     """Checkpoint gate runner for Phase 1: Foundation."""
 
     phase_number = 1
-    phase_name = "Phase 1: Foundation & Contracts"
+    phase_name = "Foundation & Contracts"
 
     @classmethod
     def run_all(cls) -> List[CheckResult]:

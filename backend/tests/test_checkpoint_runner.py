@@ -1,4 +1,4 @@
-"""Automated unit tests for the Phase Checkpoint runner system."""
+"""Automated unit tests for the Phase Checkpoint runner and All-Phase Dashboard system."""
 
 import subprocess
 import sys
@@ -8,6 +8,7 @@ from scripts.checkpoints import PHASE_REGISTRY
 from scripts.checkpoints.common import CheckStatus, REPO_ROOT
 from scripts.checkpoints.phase1 import Phase1Check
 from scripts.checkpoints.phase2 import Phase2Check
+from scripts.checkpoints.phase3 import Phase3Check
 
 
 def test_phase_registry_contains_all_seven_phases():
@@ -25,11 +26,20 @@ def test_phase_1_checks_pass():
         ), f"Phase 1 check failed: {result.name} - {result.details}"
 
 
-def test_phase_2_checks_report_not_implemented():
-    """Verify that Phase 2 correctly reports not implemented for unbuilt features."""
+def test_phase_2_checks_pass():
+    """Verify that Phase 2 programmatic execution passes completely now that intake is built."""
     results = Phase2Check.run_all()
+    assert len(results) == 10
+    for result in results:
+        assert (
+            result.status == CheckStatus.PASS
+        ), f"Phase 2 check failed: {result.name} - {result.details}"
+
+
+def test_phase_3_checks_report_not_implemented():
+    """Verify that Phase 3 correctly reports not implemented for unbuilt scanner engine."""
+    results = Phase3Check.run_all()
     assert len(results) > 0
-    # Since intake is not yet built, all checks must be NOT_IMPLEMENTED
     not_impl = [r for r in results if r.status == CheckStatus.NOT_IMPLEMENTED]
     assert len(not_impl) == len(results)
 
@@ -41,17 +51,52 @@ def test_phase_check_cli_phase_1_passes():
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
     assert proc.returncode == 0, f"Expected 0, got {proc.returncode}: {proc.stderr}"
     assert "Result: PASSED" in proc.stdout
-    assert "Phase 1: Foundation" in proc.stdout
+    assert "Foundation & Contracts" in proc.stdout
 
 
-def test_phase_check_cli_phase_2_fails():
-    """Run `scripts/phase_check.py 2` via subprocess and assert exit code 1."""
+def test_phase_check_cli_phase_2_passes():
+    """Run `scripts/phase_check.py 2` via subprocess and assert exit code 0."""
     script_path = REPO_ROOT / "scripts" / "phase_check.py"
     cmd = [sys.executable, str(script_path), "2"]
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 0, f"Expected 0, got {proc.returncode}: {proc.stderr}"
+    assert "Result: PASSED" in proc.stdout
+    assert "Secure Source Code Intake" in proc.stdout
+
+
+def test_phase_check_cli_phase_3_fails():
+    """Run `scripts/phase_check.py 3` via subprocess and assert exit code 1."""
+    script_path = REPO_ROOT / "scripts" / "phase_check.py"
+    cmd = [sys.executable, str(script_path), "3"]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
     assert proc.returncode == 1, f"Expected 1, got {proc.returncode}"
     assert "Result: FAILED" in proc.stdout
     assert "not implemented" in proc.stdout
+
+
+def test_phase_check_cli_dashboard_no_args():
+    """Run `scripts/phase_check.py` with no args and assert dashboard output."""
+    script_path = REPO_ROOT / "scripts" / "phase_check.py"
+    cmd = [sys.executable, str(script_path)]
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
+    # Exits 1 because phases 3-7 are not yet passing
+    assert proc.returncode == 1
+    assert "VibeShield All-Phase Status Dashboard" in proc.stdout
+    assert "Phase 1: Foundation & Contracts" in proc.stdout
+    assert "Phase 2: Secure Source Code Intake" in proc.stdout
+    assert "Phase 3: Security Scanner Integration" in proc.stdout
+    assert "2/7 phases passed" in proc.stdout
+    assert "Next Phase:      Phase 3: Security Scanner Integration" in proc.stdout
+
+
+def test_phase_check_cli_dashboard_all_flag():
+    """Run `scripts/phase_check.py --all` and assert dashboard output."""
+    script_path = REPO_ROOT / "scripts" / "phase_check.py"
+    cmd = [sys.executable, str(script_path), "--all"]
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 1
+    assert "VibeShield All-Phase Status Dashboard" in proc.stdout
+    assert "2/7 phases passed" in proc.stdout
 
 
 def test_phase_check_cli_invalid_phase_number():

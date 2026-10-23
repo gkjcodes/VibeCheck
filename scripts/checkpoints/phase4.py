@@ -24,7 +24,7 @@ class Phase4Check:
     """Checkpoint gate runner for Phase 4: Findings & Remediation."""
 
     phase_number = 4
-    phase_name = "Phase 4: Findings & Consolidated Remediation"
+    phase_name = "Findings & Consolidated Remediation"
 
     @classmethod
     def run_all(cls) -> List[CheckResult]:

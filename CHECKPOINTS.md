@@ -13,6 +13,7 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 | `[PASS]` | The check executed real code or automated tests, and all assertions passed. |
 | `[FAIL]` | The feature or test executed, but encountered an assertion failure, schema violation, or unhandled exception. |
 | `[NOT IMPLEMENTED]` | The required endpoint, scanner module, or test fixture has not yet been implemented. |
+| `[BLOCKED]` | Prerequisite phases are not passing, so this phase cannot yet be considered ready. |
 
 > **Gate Rule**: A phase gate exits with `0` **only** when every check for that phase achieves `[PASS]`. If any check fails or is marked `[NOT IMPLEMENTED]`, the gate exits with code `1`.
 
@@ -23,18 +24,49 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 | Phase | Name | Target Scope | Current Status |
 |---|---|---|---|
 | **Phase 1** | Foundation & Contracts | Models, contracts, `/health`, test baseline | **PASSED** |
-| **Phase 2** | Secure Intake | ZIP upload, archive safety, limits, sandboxing | **PLANNED** |
-| **Phase 3** | Scanner Integration | Rule engine, AST/heuristics, secret masking | **PLANNED** |
-| **Phase 4** | Findings & Remediation | Finding deduplication, AI repair prompt | **PLANNED** |
-| **Phase 5** | Rescan Comparison | Baseline scan vs rescan diffing, state transitions | **PLANNED** |
-| **Phase 6** | End-to-End MVP | Full journey from archive submission to rescan diff | **PLANNED** |
-| **Phase 7** | Release Gate | Full test suite, prerequisite checks, git/env audit | **BLOCKED (Phases 2–6)** |
+| **Phase 2** | Secure Source Code Intake | ZIP upload, archive safety, limits, sandboxing | **PASSED** |
+| **Phase 3** | Security Scanner Integration | Rule engine, AST/heuristics, secret masking | **PLANNED** |
+| **Phase 4** | Findings & Remediation | Finding deduplication, AI repair prompt | **BLOCKED (Phase 3)** |
+| **Phase 5** | Rescan Comparison | Baseline scan vs rescan diffing, state transitions | **BLOCKED (Phase 3)** |
+| **Phase 6** | End-to-End MVP | Full journey from archive submission to rescan diff | **BLOCKED (Phase 3)** |
+| **Phase 7** | Release Gate | Full test suite, prerequisite checks, git/env audit | **BLOCKED (Phase 3)** |
+
+---
+
+## Git Milestone Workflow
+
+After completing a development phase:
+1. Run the phase checkpoint: `py scripts/phase_check.py <phase_num>`
+2. Fix any failures until all checks achieve `[PASS]`.
+3. Run the all-phase dashboard: `py scripts/phase_check.py --all`
+4. Stage and commit the passing implementation:
+   ```bash
+   git add .
+   git commit -m "feat(phase-N): implement Phase N"
+   ```
+5. Create and push a version tag for that phase:
+   ```bash
+   git tag -a <version_tag> -m "Phase N: Description"
+   git push origin <version_tag>
+   ```
+
+### Milestone Tag Naming Conventions
+- Phase 1: `v0.1.0-phase-1`
+- Phase 2: `v0.2.0-phase-2`
+- Phase 3: `v0.3.0-phase-3`
+- Phase 4: `v0.4.0-phase-4`
+- Phase 5: `v0.5.0-phase-5`
+- Phase 6: `v0.6.0-phase-6`
+- Phase 7: `v1.0.0`
+
+> **Note on Verification**: Git tags simply mark specific commits in history; creating a tag does not independently prove that the software works. Every phase tag must be preceded by a passing run of `scripts/phase_check.py` and the full pytest suite.
 
 ---
 
 ## Phase Requirements & Evidence Specifications
 
 ### Phase 1: Foundation & Contracts
+- **Status**: **PASSED**
 - **Objective**: Establish the core intake API foundation, canonical Pydantic models, JSON schema contracts, and health readiness probe.
 - **Requirements**:
   1. FastAPI application imports without circular dependencies or runtime errors.
@@ -51,25 +83,30 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 ---
 
 ### Phase 2: Secure Source Code Intake
+- **Status**: **PASSED**
 - **Objective**: Safely accept, validate, and isolate submitted user project archives without code execution risk.
-- **Requirements**:
-  1. Archive upload endpoint (`POST /api/v1/scan` or `/api/v1/intake`) accepts valid ZIP archives.
-  2. Non-ZIP files or corrupt archives are rejected with appropriate HTTP client error codes (400/415/422).
-  3. Uploads exceeding `MAX_UPLOAD_SIZE_MB` are rejected.
-  4. Zip bomb protections: max entry count and max uncompressed expansion ratio/size are enforced.
-  5. Zip slip protection: archive entries with relative path traversal (`../`) or absolute paths are rejected.
-  6. Symlink rejection: symlinks inside archives are disallowed or ignored to prevent host filesystem access.
-  7. Per-scan workspace isolation: extracted files are confined to a unique temporary sandbox.
-  8. Static analysis only: uploaded code is **never** executed (`eval`, `exec`, or process launch).
-  9. Workspace cleanup: temporary directories are cleaned up after scan completion or error.
-  10. Automated tests in `backend/tests/test_intake.py` pass.
+- **Implemented Route**: `POST /api/v1/scans` (multipart/form-data with `file: UploadFile`)
+- **Safety Controls & Configurable Limits**:
+  - `MAX_UPLOAD_SIZE_MB`: 25 MB default (enforced during stream read)
+  - `MAX_ARCHIVE_ENTRIES`: 500 entries default
+  - `MAX_TOTAL_UNCOMPRESSED_MB`: 50 MB default
+  - `MAX_INDIVIDUAL_FILE_MB`: 5 MB default
+  - `MAX_DIRECTORY_DEPTH`: 15 levels
+  - Prohibited executables: `.exe`, `.dll`, `.so`, `.dylib`, `.bin`, `.elf`, etc.
+  - Prohibited special files: POSIX symlinks, FIFOs, device nodes
+  - Traversal protection: Parent `../` directory traversal, absolute paths (`/`), and Windows drive paths (`C:`) are rejected.
+  - Directory exclusions: Automatically skips `.git`, `node_modules`, `.venv`, `__pycache__`, etc.
+  - Sandboxed staging: Each scan receives an isolated temporary directory in `temp_scans/<scan_id>/source`.
+  - Automatic failure cleanup: Any extraction or validation failure immediately wipes the allocated workspace.
+  - Non-execution guarantee: Source files are read strictly as data streams; code is never executed, imported, or installed.
 - **Evidence**:
-  - `py scripts/phase_check.py 2` exits with code `0`.
-  - Negative test fixtures for zip slip and oversized archives pass.
+  - `py scripts/phase_check.py 2` exits with code `0` (10/10 checks passing).
+  - 18 automated intake tests in `backend/tests/test_intake.py` pass.
 
 ---
 
 ### Phase 3: Security Scanner Integration
+- **Status**: **PLANNED** (Next Recommended Phase)
 - **Objective**: Integrate deterministic static analysis heuristics and rule adapters for common vibe-coded vulnerabilities.
 - **Requirements**:
   1. Scanner engine executes against isolated source trees.
@@ -86,6 +123,7 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 ---
 
 ### Phase 4: Findings & Consolidated Remediation
+- **Status**: **BLOCKED (Requires Phase 3)**
 - **Objective**: Synthesize actionable findings, deduplicate issues, and generate one unified repair prompt for AI coding tools.
 - **Requirements**:
   1. Findings include complete metadata: impact, severity, confidence, recommendation, and verification steps.
@@ -101,6 +139,7 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 ---
 
 ### Phase 5: Rescan Comparison & Verification
+- **Status**: **BLOCKED (Requires Phase 3)**
 - **Objective**: Compare an initial scan baseline against a corrected rescan to accurately track remediation progress.
 - **Requirements**:
   1. Initial scan findings are stored as an immutable baseline.
@@ -115,6 +154,7 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 ---
 
 ### Phase 6: End-to-End MVP Integration
+- **Status**: **BLOCKED (Requires Phase 3)**
 - **Objective**: Validate the full user journey seamlessly from archive submission to rescan diffing using local test fixtures.
 - **Requirements**:
   1. Submit vulnerable project archive via API.
@@ -131,6 +171,7 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 ---
 
 ### Phase 7: Production Readiness & Release Gate
+- **Status**: **BLOCKED (Requires Phases 3–6)**
 - **Objective**: Final release qualification audit confirming complete test passage, clean git tree, credential hygiene, and prerequisites.
 - **Requirements**:
   1. Complete pytest suite passes (`py -m pytest backend/tests`).
@@ -145,22 +186,21 @@ The checkpoint runner (`scripts/phase_check.py`) enforces strict, deterministic 
 
 ---
 
-## Running Phase Checkpoints
-
-To run a specific phase gate:
+## Running Checkpoints & Dashboard
 
 ```bash
-# Phase 1: Foundation (Currently passing)
-py scripts/phase_check.py 1
+# Display All-Phase Status Dashboard
+py scripts/phase_check.py
+# or
+py scripts/phase_check.py --all
 
-# Phase 2: Secure Intake (Currently fails - not yet implemented)
-py scripts/phase_check.py 2
-
-# Phase 7: Release Gate (Currently fails - blocked by phases 2-6)
-py scripts/phase_check.py 7
+# Run specific phase gates
+py scripts/phase_check.py 1   # Phase 1: Foundation
+py scripts/phase_check.py 2   # Phase 2: Secure Intake
+py scripts/phase_check.py 3   # Phase 3: Scanner Integration
 ```
 
 On Linux or macOS, replace `py` with `python3`:
 ```bash
-python3 scripts/phase_check.py 1
+python3 scripts/phase_check.py --all
 ```

@@ -12,11 +12,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class CheckStatus(enum.Enum):
-    """Execution status for an individual phase check."""
+    """Execution status for an individual phase check or overall phase."""
 
     PASS = "PASS"
     FAIL = "FAIL"
     NOT_IMPLEMENTED = "NOT IMPLEMENTED"
+    BLOCKED = "BLOCKED"
 
 
 @dataclass
@@ -47,6 +48,8 @@ def format_status(status: CheckStatus) -> str:
         return colorize("[FAIL]", "31")  # Red
     elif status == CheckStatus.NOT_IMPLEMENTED:
         return colorize("[NOT IMPLEMENTED]", "33")  # Yellow
+    elif status == CheckStatus.BLOCKED:
+        return colorize("[BLOCKED]", "35")  # Magenta
     return f"[{status.value}]"
 
 

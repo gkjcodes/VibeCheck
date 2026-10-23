@@ -11,81 +11,141 @@ VibeShield accepts submitted website source code, analyzes it for high-impact se
 | Phase | Gate Name | Current Status | Description |
 |---|---|---|---|
 | **Phase 1** | Foundation & Contracts | **PASSED** | Core schemas, JSON contracts, FastAPI readiness `/health`, baseline tests. |
-| **Phase 2** | Secure Source Code Intake | **PLANNED** | ZIP upload, archive safety limits, zip slip/bomb protection, sandboxing. |
-| **Phase 3** | Security Scanner Integration | **PLANNED** | AST/regex vulnerability rules, line-grounded evidence, secret redaction. |
-| **Phase 4** | Findings & Remediation | **PLANNED** | Deduplication, consolidated AI repair prompt synthesis. |
-| **Phase 5** | Rescan Comparison | **PLANNED** | Baseline scan persistence, rescan diffing, state transitions. |
-| **Phase 6** | End-to-End MVP | **PLANNED** | Full user journey execution from submission to rescan diff. |
-| **Phase 7** | Release Gate | **BLOCKED** | Blocked until prerequisite phases 2 through 6 are implemented and passing. |
+| **Phase 2** | Secure Source Code Intake | **PASSED** | ZIP upload endpoint (`POST /api/v1/scans`), archive safety limits, zip slip/bomb protection, sandboxed staging, manifest generation. |
+| **Phase 3** | Security Scanner Integration | **PLANNED** (Next) | AST/regex vulnerability rules, line-grounded evidence, secret redaction. |
+| **Phase 4** | Findings & Remediation | **BLOCKED** | Deduplication, consolidated AI repair prompt synthesis (requires Phase 3). |
+| **Phase 5** | Rescan Comparison | **BLOCKED** | Baseline scan persistence, rescan diffing, state transitions (requires Phase 3). |
+| **Phase 6** | End-to-End MVP | **BLOCKED** | Full user journey execution from submission to rescan diff (requires Phase 3). |
+| **Phase 7** | Release Gate | **BLOCKED** | Release qualification audit (requires Phases 3–6). |
 
-Detailed specifications and evidence criteria for each phase can be found in [CHECKPOINTS.md](file:///c:/Users/gopal/VibeCheck/CHECKPOINTS.md).
+Detailed specifications, criteria, and evidence for every phase are documented in [CHECKPOINTS.md](file:///c:/Users/gopal/VibeCheck/CHECKPOINTS.md).
 
 ---
 
-## Phase Checkpoint System
+## Phase Checkpoint & Dashboard CLI
 
-VibeShield includes a persistent checkpoint runner that deterministically evaluates phase gates.
+VibeShield includes a persistent checkpoint runner that deterministically evaluates individual phase gates or renders a unified status dashboard across all seven phases.
 
-### Running a Phase Gate
+### 1. View All-Phase Status Dashboard
+Run with no arguments or `--all`:
 ```bash
-# On Windows (PowerShell / Command Prompt)
-py scripts/phase_check.py 1
-py scripts/phase_check.py 2
-py scripts/phase_check.py 7
+# Windows
+py scripts/phase_check.py
+# or
+py scripts/phase_check.py --all
 
-# On macOS / Linux
-python3 scripts/phase_check.py 1
+# macOS / Linux
+python3 scripts/phase_check.py --all
+```
+
+### 2. Run Individual Phase Gate Checks
+```bash
+# Windows
+py scripts/phase_check.py 1   # Verify Phase 1 (Foundation)
+py scripts/phase_check.py 2   # Verify Phase 2 (Secure Intake)
+py scripts/phase_check.py 3   # Verify Phase 3 (Scanner Integration)
+
+# macOS / Linux
+python3 scripts/phase_check.py 2
 ```
 
 ### Checkpoint Result Definitions
-- `[PASS]`: Check executed real code/tests and all assertions passed.
+- `[PASS]`: Check executed real code or automated tests, and all assertions passed.
 - `[FAIL]`: Check ran but encountered an assertion failure, error, or schema mismatch.
 - `[NOT IMPLEMENTED]`: Feature, endpoint, scanner, or test fixture is not yet built.
+- `[BLOCKED]`: Prerequisite phases are not passing, so this phase cannot yet be considered ready.
 
-> **Exit Code Policy**: The runner exits with code `0` only when **all** checks in the phase achieve `[PASS]`. If any check fails or is marked `[NOT IMPLEMENTED]`, it exits with code `1` (or `2` for invalid arguments).
+> **Exit Code Policy**:
+> - Individual gate (`scripts/phase_check.py <n>`): Exits with `0` only if **every** check in that phase passes; exits with `1` otherwise.
+> - Dashboard (`scripts/phase_check.py` or `--all`): Exits with `0` only when all 7 phases have passed; exits with `1` while development is in progress.
+> - Invalid arguments: Exits with `2` and displays usage.
 
 ### Checkpoint Limitations
-- The checkpoint runner tests deterministic local static contracts, behavioral checks, and integration tests.
-- It does **not** make live external AI API calls or require internet access for local gates.
-- Passing a gate guarantees that the required prototype criteria and safety guards are verified; it does not constitute an absolute mathematical proof of zero vulnerabilities.
+- Checkpoints test deterministic local contracts, behavioral assertions, and integration tests.
+- Local tests do **not** make live external AI API calls or require internet access.
+- Passing a gate guarantees that the prototype criteria and safety guards are verified; it does not constitute an absolute mathematical proof of zero vulnerabilities.
 
 ---
 
-## Repository Structure
+## Phase 2: Source Code Intake API
 
-```text
-VibeCheck/
-├── .env.example              # Environment variables template (no secrets)
-├── .gitignore                # Ignores venvs, caches, temporary scan files, logs
-├── CHECKPOINTS.md            # Detailed phase gate requirements and criteria
-├── pytest.ini                # Pytest configuration with pythonpath
-├── requirements.txt          # Python core dependencies
-├── README.md                 # Project documentation and setup guide
-├── backend/
-│   ├── __init__.py
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py           # FastAPI entrypoint with GET /health
-│   │   ├── api/              # API router (endpoints mounted here in Phases 2 & 3)
-│   │   ├── intake/           # Source archive intake & extraction (Phase 2)
-│   │   └── schemas/          # Pydantic models (Finding, ScanResponse, HealthResponse)
-│   ├── scanners/             # Heuristic and AST security analyzers (Phase 2/3)
-│   ├── remediation/          # Consolidated repair prompt synthesis (Phase 2/4)
-│   ├── comparison/           # Initial vs corrected scan comparison (Phase 3/5)
-│   └── tests/                # Automated pytest suite
-│       ├── test_checkpoint_runner.py # Checkpoint system unit tests
-│       ├── test_health.py    # Health endpoint verification
-│       └── test_schemas.py   # Schema validation & contract synchronization
-├── contracts/
-│   ├── finding.schema.json   # Canonical JSON Schema for security findings
-│   └── api-examples.json     # Example request/response payloads
-├── samples/
-│   ├── vulnerable/           # Sample vulnerable website source trees
-│   └── corrected/            # Sample corrected website source trees
-└── scripts/
-    ├── phase_check.py        # Checkpoint CLI entrypoint (Phases 1-7)
-    └── checkpoints/          # Modular phase check definitions
+Phase 2 introduces the secure staging endpoint for website archives:
+
+### Endpoint
+- **URL**: `POST /api/v1/scans`
+- **Content-Type**: `multipart/form-data`
+- **Field**: `file: UploadFile` (must be a valid `.zip` file)
+- **Response**: `201 Created` with `ScanResponse` JSON payload
+
+### Safety Controls & Configurable Limits
+- **Compressed Upload Size**: Default max 25 MB (`MAX_UPLOAD_SIZE_MB`)
+- **Archive Entry Count**: Default max 500 entries (`MAX_ARCHIVE_ENTRIES`)
+- **Total Uncompressed Size**: Default max 50 MB (`MAX_TOTAL_UNCOMPRESSED_MB`)
+- **Individual Extracted File Size**: Default max 5 MB (`MAX_INDIVIDUAL_FILE_MB`)
+- **Directory Traversal Protection**: Rejects `../`, absolute paths (`/`), and Windows drive paths (`C:`)
+- **Prohibited Special Files**: Rejects POSIX symlinks, FIFOs, and device nodes
+- **Disallowed Executables**: Rejects binary executables (`.exe`, `.dll`, `.so`, `.bin`, `.elf`, etc.)
+- **Excluded Directories**: Automatically ignores `.git`, `node_modules`, `.venv`, `__pycache__`, etc.
+- **Isolated Sandboxing**: Each scan receives a unique directory (`temp_scans/<scan_id>/source`)
+- **Automatic Failure Cleanup**: Any upload or extraction error wipes the workspace immediately
+- **Non-Execution Guarantee**: Uploaded source code is never executed, imported, or installed
+
+### Example Upload
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/scans \
+  -F "file=@sample-site.zip"
 ```
+
+Response:
+```json
+{
+  "scan_id": "scan_84532e36dd9f",
+  "status": "pending",
+  "project": "sample-site",
+  "coverage": {
+    "files_scanned": 12,
+    "total_lines": 850,
+    "rules_evaluated": 0,
+    "skipped_files": []
+  },
+  "findings": [],
+  "repair_prompt": null,
+  "limitations": [
+    "Intake complete; source code securely staged in isolated workspace.",
+    "Static security scanning is scheduled for Phase 3; no security findings generated yet."
+  ]
+}
+```
+
+---
+
+## Git Milestone Tagging Workflow
+
+To track stable phase completions in Git:
+1. Run the phase checkpoint: `py scripts/phase_check.py <n>`
+2. Ensure all checks achieve `[PASS]`.
+3. Run the all-phase dashboard: `py scripts/phase_check.py --all`
+4. Stage and commit changes:
+   ```bash
+   git add .
+   git commit -m "feat(phase-N): implement Phase N"
+   ```
+5. Create and push the milestone tag:
+   ```bash
+   git tag -a v0.2.0-phase-2 -m "Phase 2: Secure source code intake"
+   git push origin v0.2.0-phase-2
+   ```
+
+### Milestone Versions
+- Phase 1: `v0.1.0-phase-1`
+- Phase 2: `v0.2.0-phase-2`
+- Phase 3: `v0.3.0-phase-3`
+- Phase 4: `v0.4.0-phase-4`
+- Phase 5: `v0.5.0-phase-5`
+- Phase 6: `v0.6.0-phase-6`
+- Phase 7: `v1.0.0`
+
+> **Important**: Git tags mark specific commits in history; they do not independently prove that software works. Tags must only be created after verifying passing checkpoint tests.
 
 ---
 
@@ -139,23 +199,9 @@ uvicorn backend.app.main:app --reload --port 8000
 
 The API will be available at:
 - **Health Check**: `http://127.0.0.1:8000/health`
+- **Intake Upload**: `http://127.0.0.1:8000/api/v1/scans`
 - **Interactive OpenAPI Docs**: `http://127.0.0.1:8000/docs`
 - **ReDoc**: `http://127.0.0.1:8000/redoc`
-
-### Verify Health Endpoint
-```bash
-curl http://127.0.0.1:8000/health
-```
-
-Expected response:
-```json
-{
-  "status": "ready",
-  "ready": true,
-  "service": "VibeShield API",
-  "version": "0.1.0"
-}
-```
 
 ---
 
@@ -171,7 +217,7 @@ py -m pytest
 pytest
 ```
 
-Run with coverage:
+Run with coverage reporting:
 ```bash
 py -m pytest --cov=backend
 ```
