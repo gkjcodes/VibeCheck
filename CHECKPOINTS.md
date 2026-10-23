@@ -144,22 +144,25 @@ After completing a development phase:
 ---
 
 ### Phase 5: Rescan Comparison & Verification
-- **Status**: **PLANNED (Next Recommended Phase)**
-- **Objective**: Compare an initial scan baseline against a corrected rescan to accurately track remediation progress.
+- **Status**: **PASSED**
+- **Objective**: Compare an initial scan baseline against a corrected rescan to accurately track remediation progress without false claims.
 - **Requirements**:
-  1. Initial scan findings are stored as an immutable baseline.
-  2. Rescan endpoint accepts corrected source code archives.
-  3. Stable finding matcher correlates findings across scans using `rule_id`, normalized `file_path`, and snippet evidence.
-  4. Findings are categorized into tri-state status: `resolved`, `unresolved` (persistent), or `new`.
-  5. Findings that cannot be conclusively verified are not falsely marked resolved.
-  6. Automated comparison tests in `backend/tests/test_comparison.py` pass.
+  1. Initial scan findings are persisted and retrievable via `ScanStore`.
+  2. Rescan endpoint `/api/v1/scans/{baseline_scan_id}/rescan` accepts corrected source code archives.
+  3. Stable finding matcher correlates findings across scans using normalized paths, rules, categories, shifted line coordinates, and evidence/snippet fingerprints.
+  4. Findings are categorized into four honest dispositions: `RESOLVED`, `STILL_PRESENT`, `NEW`, and `NOT_VERIFIABLE`.
+  5. Findings in skipped files, failed scans, or incomplete scopes strictly yield `NOT_VERIFIABLE` with explicit reasons.
+  6. Direct comparison API `/api/v1/scans/compare` supports comparing scans by IDs or full payloads.
+  7. Interactive developer dashboard served at `/` and phase status endpoint `/api/v1/phases`.
+  8. Automated comparison tests in `backend/tests/test_comparison.py` pass.
 - **Evidence**:
-  - `py scripts/phase_check.py 5` exits with code `0`.
+  - `py scripts/phase_check.py 5` exits with code `0` (7/7 checks passing).
+  - 34 automated tests in `backend/tests/test_comparison.py` pass.
 
 ---
 
 ### Phase 6: End-to-End MVP Integration
-- **Status**: **BLOCKED (Requires Phase 3)**
+- **Status**: **BLOCKED (Requires Phase 5 & E2E Workflow)**
 - **Objective**: Validate the full user journey seamlessly from archive submission to rescan diffing using local test fixtures.
 - **Requirements**:
   1. Submit vulnerable project archive via API.

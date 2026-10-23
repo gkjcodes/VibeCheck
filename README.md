@@ -14,7 +14,7 @@ VibeCheck accepts submitted website source code, analyzes it for high-impact sec
 | **Phase 2** | Secure Source Code Intake | **PASSED** | ZIP upload endpoint (`POST /api/v1/scans`), archive safety limits, zip slip/bomb protection, sandboxed staging, manifest generation. |
 | **Phase 3** | Security Scanner Integration | **PASSED** | Deterministic static text analysis, 16 rules across 5 categories, secret masking, line-grounded evidence, zero-execution guarantee. |
 | **Phase 4** | Findings & Remediation | **PASSED** | Deduplication, prompt-injection-resistant advisory repair prompt synthesis, 32 KiB budget limit, zero-execution advisory. |
-| **Phase 5** | Rescan Comparison | **PLANNED** (Next) | Baseline scan persistence, rescan diffing, state transitions (requires Phase 4). |
+| **Phase 5** | Rescan Comparison & Verification | **PASSED** | Deterministic finding matcher, tri-state classification (`RESOLVED`, `STILL_PRESENT`, `NEW`, `NOT_VERIFIABLE`), honest resolution guards, interactive dashboard UI. |
 | **Phase 6** | End-to-End MVP | **BLOCKED** | Full user journey execution from submission to rescan diff (requires Phase 5). |
 | **Phase 7** | Release Gate | **BLOCKED** | Release qualification audit (requires Phases 3–6). |
 
@@ -168,6 +168,29 @@ Example Response:
   ]
 }
 ```
+
+---
+
+## Phase 5: Rescan Comparison & Developer Dashboard
+
+Phase 5 introduces the deterministic comparison engine (`backend/comparison/`), rescan ingestion, honest finding verification states, and an interactive developer dashboard (`frontend/index.html`).
+
+### Finding Dispositions
+Every baseline finding receives an honest, evidence-based status:
+- **`RESOLVED`**: The baseline finding has sufficient evidence of absence in a comparable, successful post-remediation scan with adequate coverage.
+- **`STILL_PRESENT`**: The finding persists in the post-remediation scan, including when line numbers shifted or finding IDs changed.
+- **`NEW`**: A finding in the post-remediation scan that cannot be matched to a baseline finding.
+- **`NOT_VERIFIABLE`**: Evidence is insufficient to verify resolution (e.g., relevant files skipped, scan failure, zero files scanned, or inadequate rule coverage). Missing IDs or missing line numbers never automatically trigger `RESOLVED`.
+
+### Available API Endpoints
+- `POST /api/v1/scans`: Upload initial codebase archive (`.zip`) and run baseline scan.
+- `GET /api/v1/scans`: List all previously recorded scans.
+- `GET /api/v1/scans/{scan_id}`: Retrieve findings, coverage, and remediation prompt for a specific scan.
+- `POST /api/v1/scans/{baseline_scan_id}/rescan`: Upload corrected codebase archive (`.zip`), execute rescan, and compare against baseline.
+- `POST /api/v1/scans/compare`: Direct comparison between two scans by ID or JSON payload.
+- `GET /api/v1/comparisons/{comparison_id}`: Retrieve stored comparison results and finding diffs.
+- `GET /api/v1/phases`: Live status and checkpoint checks for Phases 1 through 7.
+- `GET /`: Interactive VibeCheck developer dashboard.
 
 ---
 

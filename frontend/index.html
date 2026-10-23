@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VibeCheck — Security Analysis & Rescan Verification Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0b0f17;
+      --bg-surface: #121824;
+      --bg-elevated: #1a2234;
+      --bg-subtle: #242f45;
+      --border: #2a364f;
+      --border-focus: #3b82f6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+
+      --color-pass: #10b981;
+      --color-pass-bg: rgba(16, 185, 129, 0.12);
+      --color-pass-border: rgba(16, 185, 129, 0.3);
+
+      --color-fail: #f43f5e;
+      --color-fail-bg: rgba(244, 63, 94, 0.12);
+      --color-fail-border: rgba(244, 63, 94, 0.3);
+
+      --color-warn: #f59e0b;
+      --color-warn-bg: rgba(245, 158, 11, 0.12);
+      --color-warn-border: rgba(245, 158, 11, 0.3);
+
+      --color-blocked: #a855f7;
+      --color-blocked-bg: rgba(168, 85, 247, 0.12);
+      --color-blocked-border: rgba(168, 85, 247, 0.3);
+
+      --color-new: #06b6d4;
+      --color-new-bg: rgba(6, 182, 212, 0.12);
+      --color-new-border: rgba(6, 182, 212, 0.3);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 15px;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .brand-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--color-pass-bg);
+      color: var(--color-pass);
+      border: 1px solid var(--color-pass-border);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background-color: var(--color-pass);
+      border-radius: 50%;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1360px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+
+    /* Phase Grid */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+    }
+
+    .phase-card {
+      background-color: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: border-color 0.15s ease;
+    }
+
+    .phase-card:hover {
+      border-color: var(--border-focus);
+    }
+
+    .phase-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .phase-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    .status-pill {
+      display: inline-block;
+      align-self: flex-start;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .status-PASS {
+      background: var(--color-pass-bg);
+      color: var(--color-pass);
+      border: 1px solid var(--color-pass-border);
+    }
+
+    .status-FAIL {
+      background: var(--color-fail-bg);
+      color: var(--color-fail);
+      border: 1px solid var(--color-fail-border);
+    }
+
+    .status-NOT_IMPLEMENTED {
+      background: var(--color-warn-bg);
+      color: var(--color-warn);
+      border: 1px solid var(--color-warn-border);
+    }
+
+    .status-BLOCKED {
+      background: var(--color-blocked-bg);
+      color: var(--color-blocked);
+      border: 1px solid var(--color-blocked-border);
+    }
+
+    /* Workflow Columns */
+    .workflow-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .workflow-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .workflow-box {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="file"], select, input[type="text"] {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      outline: none;
+    }
+
+    input[type="file"]::file-selector-button {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 12px;
+      font-family: var(--font-sans);
+    }
+
+    button {
+      background: #0284c7;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s ease;
+    }
+
+    button:hover {
+      background: #0369a1;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-subtle);
+    }
+
+    /* Comparison Summary Cards */
+    .summary-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .summary-tile {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .summary-num {
+      font-size: 24px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .summary-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .tile-resolved .summary-num { color: var(--color-pass); }
+    .tile-still_present .summary-num { color: var(--color-fail); }
+    .tile-new .summary-num { color: var(--color-new); }
+    .tile-not_verifiable .summary-num { color: var(--color-warn); }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Finding Items */
+    .findings-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .finding-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-left: 4px solid var(--border);
+    }
+
+    .finding-card.disp-RESOLVED { border-left-color: var(--color-pass); }
+    .finding-card.disp-STILL_PRESENT { border-left-color: var(--color-fail); }
+    .finding-card.disp-NEW { border-left-color: var(--color-new); }
+    .finding-card.disp-NOT_VERIFIABLE { border-left-color: var(--color-warn); }
+
+    .finding-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .finding-title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .finding-rule {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .finding-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .pill-group {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .diff-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .diff-table th, .diff-table td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      text-align: left;
+    }
+
+    .diff-table th {
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .code-box {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: var(--bg-base);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 4px;
+      color: #cbd5e1;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .rationale-note {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+
+    .unverifiable-alert {
+      font-size: 12px;
+      color: #fbbf24;
+      background: var(--color-warn-bg);
+      border: 1px solid var(--color-warn-border);
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+
+    .empty-state {
+      padding: 40px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .empty-icon {
+      font-size: 28px;
+      opacity: 0.6;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      display: none;
+    }
+
+    .alert-error {
+      background: var(--color-fail-bg);
+      color: #fecdd3;
+      border: 1px solid var(--color-fail-border);
+    }
+
+    .alert-success {
+      background: var(--color-pass-bg);
+      color: #a7f3d0;
+      border: 1px solid var(--color-pass-border);
+    }
+
+    .limitations-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .limitations-box ul {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="logo-badge">VC</div>
+      <div>
+        <div class="brand-title">VibeCheck</div>
+        <div class="brand-sub">Security Analysis & Verification Platform</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="badge-live"><span class="pulse-dot"></span> API v0.1.0 Ready</span>
+      <button class="btn-secondary" onclick="loadPhaseStatus()" style="padding: 6px 12px; font-size: 12px;">Refresh Status</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Notification Banners -->
+    <div id="errorBanner" class="alert alert-error"></div>
+    <div id="successBanner" class="alert alert-success"></div>
+
+    <!-- Section 1: Project Overview (Phases 1 - 7) -->
+    <section>
+      <div class="section-title">
+        <span>01</span> Project Architecture & Phase Verification
+      </div>
+      <div class="card">
+        <div id="phaseGrid" class="phase-grid">
+          <div class="phase-card">
+            <span class="phase-num">Loading...</span>
+            <span class="phase-name">Querying phase gate registry...</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Scan Intake & Rescan Comparison -->
+    <section>
+      <div class="section-title">
+        <span>02</span> Intake, Rescan & Diff Verification Engine
+      </div>
+      <div class="workflow-grid">
+        <!-- Step A: Baseline Intake -->
+        <div class="card workflow-box">
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--text-main);">Initial Baseline Code Intake</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">
+            Upload a project zip archive to run deterministic AST and regex security scanning.
+          </p>
+          <div class="form-group">
+            <label for="baselineFileInput">Baseline Archive (.zip)</label>
+            <input type="file" id="baselineFileInput" accept=".zip">
+          </div>
+          <button id="btnRunBaseline" onclick="submitBaselineScan()">
+            Execute Baseline Security Scan
+          </button>
+          <div id="baselineScanMeta" style="display: none; font-size: 12px; background: var(--bg-elevated); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <div><strong>Scan ID:</strong> <span id="lblBaseId" style="font-family: var(--font-mono); color: var(--accent);"></span></div>
+            <div><strong>Findings Detected:</strong> <span id="lblBaseFindings"></span></div>
+            <div><strong>Files Scanned:</strong> <span id="lblBaseFiles"></span></div>
+          </div>
+        </div>
+
+        <!-- Step B: Rescan Upload & Compare -->
+        <div class="card workflow-box">
+          <h3 style="font-size: 14px; font-weight: 700; color: var(--text-main);">Post-Remediation Rescan & Verification</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">
+            Upload repaired codebase archive to correlate findings against the baseline scan.
+          </p>
+          <div class="form-group">
+            <label for="selectBaselineScan">Target Baseline Scan</label>
+            <select id="selectBaselineScan">
+              <option value="">-- No baseline scans available --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="rescanFileInput">Corrected Archive (.zip)</label>
+            <input type="file" id="rescanFileInput" accept=".zip">
+          </div>
+          <button id="btnRunRescan" onclick="submitRescanAndCompare()" style="background: #0d9488;">
+            Upload Rescan & Run Comparison
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Comparison Results Dashboard -->
+    <section id="resultsSection" style="display: none;">
+      <div class="section-title">
+        <span>03</span> Verification Findings & Diff Inspection
+      </div>
+      <div class="card">
+        <!-- Summary Counts -->
+        <div class="summary-tiles">
+          <div class="summary-tile">
+            <div id="sumBaseline" class="summary-num">0</div>
+            <div class="summary-label">Baseline Findings</div>
+          </div>
+          <div class="summary-tile">
+            <div id="sumCurrent" class="summary-num">0</div>
+            <div class="summary-label">Current Findings</div>
+          </div>
+          <div class="summary-tile tile-resolved">
+            <div id="sumResolved" class="summary-num">0</div>
+            <div class="summary-label">Resolved</div>
+          </div>
+          <div class="summary-tile tile-still_present">
+            <div id="sumStillPresent" class="summary-num">0</div>
+            <div class="summary-label">Still Present</div>
+          </div>
+          <div class="summary-tile tile-new">
+            <div id="sumNew" class="summary-num">0</div>
+            <div class="summary-label">New Findings</div>
+          </div>
+          <div class="summary-tile tile-not_verifiable">
+            <div id="sumNotVerifiable" class="summary-num">0</div>
+            <div class="summary-label">Not Verifiable</div>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="filterDisposition" style="font-size: 11px;">Disposition:</label>
+            <select id="filterDisposition" onchange="renderFilteredFindings()">
+              <option value="ALL">All Dispositions</option>
+              <option value="RESOLVED">Resolved Only</option>
+              <option value="STILL_PRESENT">Still Present Only</option>
+              <option value="NEW">New Findings Only</option>
+              <option value="NOT_VERIFIABLE">Not Verifiable Only</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterSeverity" style="font-size: 11px;">Severity:</label>
+            <select id="filterSeverity" onchange="renderFilteredFindings()">
+              <option value="ALL">All Severities</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted);">
+            Showing <span id="lblMatchCount" style="font-weight: 700; color: var(--text-main);">0</span> items
+          </div>
+        </div>
+
+        <!-- Findings List -->
+        <div id="findingsContainer" class="findings-container"></div>
+
+        <!-- Limitations & Scan Completeness Notes -->
+        <div id="limitationsBox" class="limitations-box" style="display: none;">
+          <strong>Scanner & Verification Limitations:</strong>
+          <ul id="limitationsList"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = '/api/v1';
+    let currentComparison = null;
+    let availableScans = [];
+
+    // Initialize Dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPhaseStatus();
+      loadScansList();
+    });
+
+    function showError(msg) {
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = msg;
+      banner.style.display = 'block';
+      setTimeout(() => { banner.style.display = 'none'; }, 6000);
+    }
+
+    function showSuccess(msg) {
+      const banner = document.getElementById('successBanner');
+      banner.textContent = msg;
+      banner.style.display = 'block';
+      setTimeout(() => { banner.style.display = 'none'; }, 4000);
+    }
+
+    // 1. Fetch and render Phase 1-7 live statuses
+    async function loadPhaseStatus() {
+      const grid = document.getElementById('phaseGrid');
+      try {
+        const res = await fetch(`${API_BASE}/phases`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const phases = await res.json();
+
+        grid.innerHTML = phases.map(p => `
+          <div class="phase-card">
+            <div>
+              <div class="phase-num">Phase ${p.phase}</div>
+              <div class="phase-name">${escapeHtml(p.name)}</div>
+            </div>
+            <div>
+              <span class="status-pill status-${p.status.replace(/\s+/g, '_')}">${p.status}</span>
+              ${p.reason && p.status !== 'PASS' ? `<div style="font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.2;">${escapeHtml(p.reason)}</div>` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        grid.innerHTML = `<div style="color: var(--color-fail); font-size: 12px;">Failed to load live phase status from API: ${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    // 2. Fetch recorded scans for select dropdown
+    async function loadScansList() {
+      const select = document.getElementById('selectBaselineScan');
+      try {
+        const res = await fetch(`${API_BASE}/scans`);
+        if (!res.ok) return;
+        availableScans = await res.json();
+
+        if (availableScans.length === 0) {
+          select.innerHTML = '<option value="">-- No baseline scans recorded yet --</option>';
+          return;
+        }
+
+        select.innerHTML = availableScans.map(s => `
+          <option value="${escapeHtml(s.scan_id)}">
+            ${escapeHtml(s.project || 'Project')} — ${s.scan_id.substring(0, 16)}... (${s.findings ? s.findings.length : 0} findings)
+          </option>
+        `).join('');
+      } catch (err) {
+        console.warn('Could not load scans list:', err);
+      }
+    }
+
+    // 3. Submit baseline scan
+    async function submitBaselineScan() {
+      const fileInput = document.getElementById('baselineFileInput');
+      const btn = document.getElementById('btnRunBaseline');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showError('Please select a project .zip archive to upload.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      btn.disabled = true;
+      btn.textContent = 'Scanning archive...';
+
+      try {
+        const res = await fetch(`${API_BASE}/scans`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          throw new Error(errData.detail || `Upload failed with status ${res.status}`);
+        }
+
+        const scan = await res.json();
+        showSuccess(`Baseline scan ${scan.scan_id} completed successfully.`);
+
+        // Display scan metadata
+        document.getElementById('lblBaseId').textContent = scan.scan_id;
+        document.getElementById('lblBaseFindings').textContent = scan.findings ? scan.findings.length : 0;
+        document.getElementById('lblBaseFiles').textContent = scan.coverage ? scan.coverage.files_scanned : 0;
+        document.getElementById('baselineScanMeta').style.display = 'block';
+
+        // Refresh select dropdown
+        await loadScansList();
+        document.getElementById('selectBaselineScan').value = scan.scan_id;
+      } catch (err) {
+        showError(`Scan error: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Execute Baseline Security Scan';
+      }
+    }
+
+    // 4. Submit rescan and run comparison
+    async function submitRescanAndCompare() {
+      const select = document.getElementById('selectBaselineScan');
+      const baselineId = select.value;
+      const fileInput = document.getElementById('rescanFileInput');
+      const btn = document.getElementById('btnRunRescan');
+
+      if (!baselineId) {
+        showError('Please execute or select a valid baseline scan first.');
+        return;
+      }
+
+      if (!fileInput.files || fileInput.files.length === 0) {
+        showError('Please select a corrected project .zip archive.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+
+      btn.disabled = true;
+      btn.textContent = 'Ingesting rescan & running comparison...';
+
+      try {
+        const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(baselineId)}/rescan`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          throw new Error(errData.detail || `Rescan comparison failed with status ${res.status}`);
+        }
+
+        const compResult = await res.json();
+        showSuccess('Rescan comparison generated successfully.');
+        displayComparisonResult(compResult);
+      } catch (err) {
+        showError(`Rescan error: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Upload Rescan & Run Comparison';
+      }
+    }
+
+    // 5. Render Comparison Result
+    function displayComparisonResult(comp) {
+      currentComparison = comp;
+      document.getElementById('resultsSection').style.display = 'block';
+
+      // Summary counts
+      const s = comp.summary || {};
+      document.getElementById('sumBaseline').textContent = s.baseline_total ?? 0;
+      document.getElementById('sumCurrent').textContent = s.current_total ?? 0;
+      document.getElementById('sumResolved').textContent = s.resolved_count ?? 0;
+      document.getElementById('sumStillPresent').textContent = s.still_present_count ?? 0;
+      document.getElementById('sumNew').textContent = s.new_count ?? 0;
+      document.getElementById('sumNotVerifiable').textContent = s.not_verifiable_count ?? 0;
+
+      // Limitations
+      const limBox = document.getElementById('limitationsBox');
+      const limList = document.getElementById('limitationsList');
+      const allLims = (comp.limitations || []).concat(s.verification_limitations || []);
+      const uniqueLims = Array.from(new Set(allLims));
+
+      if (uniqueLims.length > 0) {
+        limList.innerHTML = uniqueLims.map(l => `<li>${escapeHtml(l)}</li>`).join('');
+        limBox.style.display = 'block';
+      } else {
+        limBox.style.display = 'none';
+      }
+
+      renderFilteredFindings();
+      document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderFilteredFindings() {
+      if (!currentComparison) return;
+
+      const dispFilter = document.getElementById('filterDisposition').value;
+      const sevFilter = document.getElementById('filterSeverity').value;
+      const container = document.getElementById('findingsContainer');
+
+      const items = (currentComparison.findings || []).filter(item => {
+        if (dispFilter !== 'ALL' && item.disposition !== dispFilter.toLowerCase()) return false;
+        if (sevFilter !== 'ALL') {
+          const sevB = (item.severity_before || '').toUpperCase();
+          const sevA = (item.severity_after || '').toUpperCase();
+          if (sevB !== sevFilter && sevA !== sevFilter) return false;
+        }
+        return true;
+      });
+
+      document.getElementById('lblMatchCount').textContent = items.length;
+
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">✓</div>
+            <div>No comparison findings match the selected filters.</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const dispUpper = (item.disposition || '').toUpperCase();
+        const sevBefore = item.severity_before ? item.severity_before.toUpperCase() : 'N/A';
+        const sevAfter = item.severity_after ? item.severity_after.toUpperCase() : 'N/A';
+        const locBefore = item.location_before ? `${escapeHtml(item.location_before.file_path)}:${item.location_before.line_start}` : 'N/A';
+        const locAfter = item.location_after ? `${escapeHtml(item.location_after.file_path)}:${item.location_after.line_start}` : 'N/A';
+
+        return `
+          <div class="finding-card disp-${dispUpper}">
+            <div class="finding-header">
+              <div class="finding-title-group">
+                <span class="finding-rule">${escapeHtml(item.rule_id || 'RULE-UNKNOWN')} &bull; ${escapeHtml(item.category || 'general')}</span>
+                <span class="finding-title">${escapeHtml(item.title || 'Security Finding')}</span>
+              </div>
+              <div class="pill-group">
+                <span class="status-pill status-${dispUpper === 'RESOLVED' ? 'PASS' : (dispUpper === 'STILL_PRESENT' ? 'FAIL' : (dispUpper === 'NEW' ? 'NEW' : 'NOT_IMPLEMENTED'))}">
+                  ${dispUpper.replace('_', ' ')}
+                </span>
+              </div>
+            </div>
+
+            <!-- Diff Coordinate Table -->
+            <table class="diff-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px;">Attribute</th>
+                  <th>Baseline Scan State</th>
+                  <th>Post-Remediation State</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Severity</strong></td>
+                  <td>${sevBefore}</td>
+                  <td>${sevAfter}</td>
+                </tr>
+                <tr>
+                  <td><strong>Location</strong></td>
+                  <td><code>${locBefore}</code></td>
+                  <td><code>${locAfter}</code></td>
+                </tr>
+                ${item.evidence_before || item.evidence_after ? `
+                <tr>
+                  <td><strong>Evidence</strong></td>
+                  <td><div class="code-box">${escapeHtml(item.evidence_before || 'None')}</div></td>
+                  <td><div class="code-box">${escapeHtml(item.evidence_after || 'None')}</div></td>
+                </tr>
+                ` : ''}
+              </tbody>
+            </table>
+
+            <!-- Qualitative Match Rationale -->
+            ${item.match_rationale ? `
+              <div class="rationale-note">
+                <strong>Match Rationale:</strong> ${escapeHtml(item.match_rationale)}
+              </div>
+            ` : ''}
+
+            <!-- Unverifiable Alert -->
+            ${item.unverifiable_reason ? `
+              <div class="unverifiable-alert">
+                <strong>Verification Warning:</strong> ${escapeHtml(item.unverifiable_reason)}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+  </script>
+</body>
+</html>

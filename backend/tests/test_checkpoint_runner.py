@@ -86,20 +86,31 @@ def test_phase_check_cli_phase_4_passes():
     assert "Findings & Consolidated Remediation" in proc.stdout
 
 
+def test_phase_check_cli_phase_5_passes():
+    """Run `scripts/phase_check.py 5` via subprocess and assert exit code 0."""
+    script_path = REPO_ROOT / "scripts" / "phase_check.py"
+    cmd = [sys.executable, str(script_path), "5"]
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 0, f"Expected 0, got {proc.returncode}: {proc.stderr}"
+    assert "Result: PASSED" in proc.stdout
+    assert "Rescan Comparison & Verification" in proc.stdout
+
+
 def test_phase_check_cli_dashboard_no_args():
     """Run `scripts/phase_check.py` with no args and assert dashboard output."""
     script_path = REPO_ROOT / "scripts" / "phase_check.py"
     cmd = [sys.executable, str(script_path)]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
-    # Exits 1 because phases 5-7 are not yet passing
+    # Exits 1 because phases 6-7 are not yet passing
     assert proc.returncode == 1
     assert "All-Phase Status Dashboard" in proc.stdout
     assert "Phase 1: Foundation & Contracts" in proc.stdout
     assert "Phase 2: Secure Source Code Intake" in proc.stdout
     assert "Phase 3: Security Scanner Integration" in proc.stdout
     assert "Phase 4: Findings & Consolidated Remediation" in proc.stdout
-    assert "4/7 phases passed" in proc.stdout
-    assert "Next Phase:      Phase 5: Rescan Comparison & Verification" in proc.stdout
+    assert "Phase 5: Rescan Comparison & Verification" in proc.stdout
+    assert "5/7 phases passed" in proc.stdout
+    assert "Next Phase:      Phase 6: End-to-End MVP Integration" in proc.stdout
 
 
 def test_phase_check_cli_dashboard_all_flag():
@@ -109,9 +120,9 @@ def test_phase_check_cli_dashboard_all_flag():
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
     assert proc.returncode == 1
     assert "All-Phase Status Dashboard" in proc.stdout
-    assert "Phase 4: Findings & Consolidated Remediation" in proc.stdout
-    assert "4/7 phases passed" in proc.stdout
-    assert "Next Phase:      Phase 5: Rescan Comparison & Verification" in proc.stdout
+    assert "Phase 5: Rescan Comparison & Verification" in proc.stdout
+    assert "5/7 phases passed" in proc.stdout
+    assert "Next Phase:      Phase 6: End-to-End MVP Integration" in proc.stdout
 
 
 def test_phase_check_cli_invalid_phase_number():
