@@ -13,8 +13,8 @@ VibeCheck accepts submitted website source code, analyzes it for high-impact sec
 | **Phase 1** | Foundation & Contracts | **PASSED** | Core schemas, JSON contracts, FastAPI readiness `/health`, baseline tests. |
 | **Phase 2** | Secure Source Code Intake | **PASSED** | ZIP upload endpoint (`POST /api/v1/scans`), archive safety limits, zip slip/bomb protection, sandboxed staging, manifest generation. |
 | **Phase 3** | Security Scanner Integration | **PASSED** | Deterministic static text analysis, 16 rules across 5 categories, secret masking, line-grounded evidence, zero-execution guarantee. |
-| **Phase 4** | Findings & Remediation | **PLANNED** (Next) | Deduplication, consolidated AI repair prompt synthesis (requires Phase 3). |
-| **Phase 5** | Rescan Comparison | **BLOCKED** | Baseline scan persistence, rescan diffing, state transitions (requires Phase 4). |
+| **Phase 4** | Findings & Remediation | **PASSED** | Deduplication, prompt-injection-resistant advisory repair prompt synthesis, 32 KiB budget limit, zero-execution advisory. |
+| **Phase 5** | Rescan Comparison | **PLANNED** (Next) | Baseline scan persistence, rescan diffing, state transitions (requires Phase 4). |
 | **Phase 6** | End-to-End MVP | **BLOCKED** | Full user journey execution from submission to rescan diff (requires Phase 5). |
 | **Phase 7** | Release Gate | **BLOCKED** | Release qualification audit (requires Phases 3–6). |
 
@@ -44,9 +44,10 @@ python3 scripts/phase_check.py --all
 py scripts/phase_check.py 1   # Verify Phase 1 (Foundation)
 py scripts/phase_check.py 2   # Verify Phase 2 (Secure Intake)
 py scripts/phase_check.py 3   # Verify Phase 3 (Scanner Integration)
+py scripts/phase_check.py 4   # Verify Phase 4 (Remediation Synthesis)
 
 # macOS / Linux
-python3 scripts/phase_check.py 3
+python3 scripts/phase_check.py 4
 ```
 
 ### Checkpoint Result Definitions

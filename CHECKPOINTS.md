@@ -124,23 +124,27 @@ After completing a development phase:
 ---
 
 ### Phase 4: Findings & Consolidated Remediation
-- **Status**: **PLANNED (Next Recommended Phase)**
-- **Objective**: Synthesize actionable findings, deduplicate issues, and generate one unified repair prompt for AI coding tools.
+- **Status**: **PASSED**
+- **Objective**: Synthesize actionable findings, deduplicate issues, and generate one unified advisory repair prompt for AI coding tools.
 - **Requirements**:
   1. Findings include complete metadata: impact, severity, confidence, recommendation, and verification steps.
   2. Duplicate findings (same file, rule, and location) are consolidated or suppressed.
-  3. User-facing outputs and prompts redact raw secrets.
+  3. User-facing outputs and prompts redact raw secrets via defense-in-depth masking.
   4. Generates a structured repair prompt instructing AI assistants on exact fixes with file/line references.
-  5. AI repair prompt never leaks raw secret values.
-  6. Partial coverage and known scanner limitations are honestly reported in `limitations`.
-  7. Automated tests in `backend/tests/test_remediation.py` pass.
+  5. AI repair prompt never leaks raw secret values or internal server paths.
+  6. Partial coverage, skipped files, and known scanner limitations are honestly reported.
+  7. Prompt injection boundaries defang malicious instructions embedded in source text.
+  8. Prompt size strictly bounded to 32 KiB with truthful omitted-findings reporting.
+  9. Advisory only: source code is never executed, imported, or automatically modified.
+  10. Automated tests in `backend/tests/test_remediation.py` pass.
 - **Evidence**:
-  - `py scripts/phase_check.py 4` exits with code `0`.
+  - `py scripts/phase_check.py 4` exits with code `0` (11/11 checks passing).
+  - 16 automated tests in `backend/tests/test_remediation.py` pass.
 
 ---
 
 ### Phase 5: Rescan Comparison & Verification
-- **Status**: **BLOCKED (Requires Phase 3)**
+- **Status**: **PLANNED (Next Recommended Phase)**
 - **Objective**: Compare an initial scan baseline against a corrected rescan to accurately track remediation progress.
 - **Requirements**:
   1. Initial scan findings are stored as an immutable baseline.

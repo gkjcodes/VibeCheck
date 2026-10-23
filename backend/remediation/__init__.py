@@ -1,4 +1,19 @@
-"""Consolidated remediation prompt generator module for VibeShield.
+"""Consolidated remediation prompt generator module for VibeCheck.
 
-Reserved for repair prompt synthesis and AI-assisted guidance generation in Phase 2.
+Phase 4: Findings & Consolidated Remediation.
+Synthesizes deterministic, advisory-only repair prompts for AI coding assistants.
 """
+
+from backend.remediation.generator import (
+    PromptSynthesizer,
+    RemediationError,
+    RemediationService,
+    generate_repair_prompt,
+)
+
+__all__ = [
+    "PromptSynthesizer",
+    "RemediationError",
+    "RemediationService",
+    "generate_repair_prompt",
+]
