@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Canonical contract examples for VibeShield API endpoints and data models",
+  "health_response": {
+    "status": "ready",
+    "ready": true,
+    "service": "VibeShield API",
+    "version": "0.1.0"
+  },
+  "finding_example": {
+    "id": "finding-sec-001",
+    "rule_id": "VIBE-SEC-SECRET-001",
+    "category": "hardcoded-secret",
+    "title": "Hardcoded Production API Secret Detected",
+    "severity": "critical",
+    "confidence": "high",
+    "status": "open",
+    "location": {
+      "file_path": "src/api/client.js",
+      "line_start": 12,
+      "line_end": 12,
+      "snippet": "const STRIPE_SECRET = 'sk_live_51MzXYZ1234567890abcdef';"
+    },
+    "evidence": "Stripe live secret key literal matched regex pattern 'sk_live_[0-9a-zA-Z]{24}'",
+    "impact": "Exposing production API keys directly in client-side code enables attackers to execute unauthorized financial transactions and drain accounts.",
+    "recommendation": "Remove hardcoded secrets from client-accessible source code. Move sensitive operations to a backend server and load credentials from environment variables.",
+    "verification_steps": [
+      "Confirm the secret is purged from the codebase and git history.",
+      "Rotate the compromised Stripe key in the Stripe Dashboard.",
+      "Verify the client fetches data via authenticated backend endpoints instead of using direct secret keys."
+    ]
+  },
+  "scan_response_example": {
+    "scan_id": "scan-9f82b7c4",
+    "status": "completed",
+    "project": "sample-vibe-storefront",
+    "coverage": {
+      "files_scanned": 18,
+      "total_lines": 2450,
+      "rules_evaluated": 22,
+      "skipped_files": [
+        "dist/bundle.js",
+        "assets/hero.png"
+      ]
+    },
+    "findings": [
+      {
+        "id": "finding-sec-001",
+        "rule_id": "VIBE-SEC-SECRET-001",
+        "category": "hardcoded-secret",
+        "title": "Hardcoded Production API Secret Detected",
+        "severity": "critical",
+        "confidence": "high",
+        "status": "open",
+        "location": {
+          "file_path": "src/api/client.js",
+          "line_start": 12,
+          "line_end": 12,
+          "snippet": "const STRIPE_SECRET = 'sk_live_51MzXYZ1234567890abcdef';"
+        },
+        "evidence": "Stripe live secret key literal matched regex pattern 'sk_live_[0-9a-zA-Z]{24}'",
+        "impact": "Exposing production API keys directly in client-side code enables attackers to execute unauthorized financial transactions and drain accounts.",
+        "recommendation": "Remove hardcoded secrets from client-accessible source code. Move sensitive operations to a backend server and load credentials from environment variables.",
+        "verification_steps": [
+          "Confirm the secret is purged from the codebase and git history.",
+          "Rotate the compromised Stripe key in the Stripe Dashboard.",
+          "Verify the client fetches data via authenticated backend endpoints instead of using direct secret keys."
+        ]
+      },
+      {
+        "id": "finding-sec-002",
+        "rule_id": "VIBE-SEC-CORS-001",
+        "category": "insecure-config",
+        "title": "Permissive Wildcard CORS Configuration",
+        "severity": "high",
+        "confidence": "high",
+        "status": "open",
+        "location": {
+          "file_path": "server.js",
+          "line_start": 25,
+          "line_end": 27,
+          "snippet": "app.use(cors({ origin: '*', credentials: true }));"
+        },
+        "evidence": "CORS origin set to '*' with credentials enabled",
+        "impact": "Allows arbitrary third-party websites to make authenticated cross-origin requests to your backend endpoints, exposing private user data.",
+        "recommendation": "Specify explicit trusted origins in CORS configuration instead of wildcard '*', and restrict allowed methods and headers.",
+        "verification_steps": [
+          "Update CORS config to accept only approved frontend origins (e.g. process.env.FRONTEND_ORIGIN).",
+          "Send an Options preflight request from an untrusted origin and verify it is rejected."
+        ]
+      }
+    ],
+    "repair_prompt": "You are a senior security engineer. Fix the following vulnerabilities identified in sample-vibe-storefront:\n1. [Critical] Hardcoded Production API Secret Detected in src/api/client.js:12. Remove the hardcoded 'sk_live_...' key, replace with process.env.STRIPE_SECRET accessed only on the server, and revoke the old key.\n2. [High] Permissive Wildcard CORS Configuration in server.js:25-27. Replace wildcard '*' origin with an explicit whitelist loaded from environment configuration.",
+    "limitations": [
+      "Static heuristics and pattern rules only; runtime dynamic execution not performed.",
+      "Third-party npm package internal code inside node_modules was excluded from deep AST analysis."
+    ]
+  }
+}

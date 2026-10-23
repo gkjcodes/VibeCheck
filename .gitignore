@@ -1,0 +1,49 @@
+# Environment and credentials
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Temporary scan files, uploads, and archives
+temp_scans/
+tmp/
+*.zip
+*.tar.gz
+*.tar
+uploads/
+scans_output/
+
+# Node / Frontend (reserved for upcoming phases)
+node_modules/
+dist/
+build/
+.next/
+*.log
+
+# Editor and OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

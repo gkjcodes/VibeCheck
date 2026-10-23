@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Finding",
+  "description": "Individual security finding identified during analysis.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "title": "Id",
+      "description": "Unique identifier for the finding instance"
+    },
+    "rule_id": {
+      "type": "string",
+      "title": "Rule Id",
+      "description": "Security rule identifier (e.g., 'SEC-AUTH-001', 'VIBE-CORS-WILDCARD')"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "description": "Security category (e.g., 'hardcoded-secret', 'injection', 'insecure-config')"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title",
+      "description": "Concise, human-readable summary of the vulnerability"
+    },
+    "severity": {
+      "type": "string",
+      "title": "Severity",
+      "description": "Severity level (e.g., 'critical', 'high', 'medium', 'low', 'info')"
+    },
+    "confidence": {
+      "type": "string",
+      "title": "Confidence",
+      "description": "Detection confidence level (e.g., 'high', 'medium', 'low')"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "default": "open",
+      "description": "Finding status (e.g., 'open', 'resolved', 'unresolved', 'suppressed')"
+    },
+    "location": {
+      "$ref": "#/$defs/FindingLocation",
+      "description": "Code location where the vulnerability was detected"
+    },
+    "evidence": {
+      "type": "string",
+      "title": "Evidence",
+      "description": "Concrete evidence from source code, AST, or config demonstrating the vulnerability"
+    },
+    "impact": {
+      "type": "string",
+      "title": "Impact",
+      "description": "Security impact and potential exploit scenarios"
+    },
+    "recommendation": {
+      "type": "string",
+      "title": "Recommendation",
+      "description": "Specific instructions for fixing the vulnerability"
+    },
+    "verification_steps": {
+      "type": "array",
+      "title": "Verification Steps",
+      "items": {
+        "type": "string"
+      },
+      "description": "Actionable verification steps to confirm the vulnerability is resolved"
+    }
+  },
+  "required": [
+    "id",
+    "rule_id",
+    "category",
+    "title",
+    "severity",
+    "confidence",
+    "location",
+    "evidence",
+    "impact",
+    "recommendation"
+  ],
+  "$defs": {
+    "FindingLocation": {
+      "title": "FindingLocation",
+      "description": "File and line coordinates identifying where a vulnerability occurs.",
+      "type": "object",
+      "properties": {
+        "file_path": {
+          "type": "string",
+          "title": "File Path",
+          "description": "Relative path of the source file where the issue was located"
+        },
+        "line_start": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Line Start",
+          "default": null,
+          "description": "Starting line number of the finding (1-indexed)"
+        },
+        "line_end": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Line End",
+          "default": null,
+          "description": "Ending line number of the finding (1-indexed)"
+        },
+        "snippet": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Snippet",
+          "default": null,
+          "description": "Source code snippet illustrating the context"
+        }
+      },
+      "required": [
+        "file_path"
+      ]
+    }
+  }
+}
