@@ -7,6 +7,12 @@ from backend.app.schemas.comparison import (
 )
 from backend.app.schemas.finding import Finding, FindingLocation
 from backend.app.schemas.health import HealthResponse
+from backend.app.schemas.remediation import (
+    RemediationApplyRequest,
+    RemediationApplyResponse,
+    RemediationProposal,
+    RemediationReviewResponse,
+)
 from backend.app.schemas.scan import ScanCoverage, ScanResponse
 
 __all__ = [
@@ -20,4 +26,8 @@ __all__ = [
     "ComparisonResult",
     "ComparisonSummary",
     "FindingDisposition",
+    "RemediationProposal",
+    "RemediationReviewResponse",
+    "RemediationApplyRequest",
+    "RemediationApplyResponse",
 ]

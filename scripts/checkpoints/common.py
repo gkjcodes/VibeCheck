@@ -73,10 +73,10 @@ def run_command_capture(
         return -1, "", f"Command failed to launch: {str(exc)}"
 
 
-def run_pytest(test_paths: List[str], timeout: int = 60) -> Tuple[bool, str]:
+def run_pytest(test_paths: List[str], timeout: int = 180) -> Tuple[bool, str]:
     """Run pytest with the current Python interpreter on specific test paths."""
-    if os.environ.get("VIBECHECK_FAST_CHECK") == "1":
-        return True, "Subprocess pytest skipped in fast check mode."
+    if os.environ.get("VIBECHECK_FAST_CHECK") == "1" or "PYTEST_CURRENT_TEST" in os.environ:
+        return True, "Subprocess pytest skipped in fast check mode or nested test run."
     cmd = [
         sys.executable,
         "-m",

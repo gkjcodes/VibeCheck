@@ -597,10 +597,21 @@
           <button id="btnRunBaseline" onclick="submitBaselineScan()">
             Execute Baseline Security Scan
           </button>
-          <div id="baselineScanMeta" style="display: none; font-size: 12px; background: var(--bg-elevated); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <div id="baselineScanMeta" style="display: none; font-size: 12px; background: var(--bg-elevated); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-top: 10px;">
             <div><strong>Scan ID:</strong> <span id="lblBaseId" style="font-family: var(--font-mono); color: var(--accent);"></span></div>
             <div><strong>Findings Detected:</strong> <span id="lblBaseFindings"></span></div>
             <div><strong>Files Scanned:</strong> <span id="lblBaseFiles"></span></div>
+            <div style="margin-top: 10px; display: flex; gap: 8px;">
+              <button class="btn-secondary" onclick="toggleRepairPrompt()" style="padding: 4px 10px; font-size: 11px;">View Repair Prompt</button>
+              <button class="btn-secondary" onclick="loadRemediationProposals(currentScanId)" style="padding: 4px 10px; font-size: 11px;">Review Proposals</button>
+            </div>
+            <div id="repairPromptBox" style="display: none; margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-weight: 600; color: var(--text-main); font-size: 11px;">Generated Remediation Prompt:</span>
+                <button class="btn-secondary" onclick="copyRepairPrompt()" style="padding: 2px 8px; font-size: 10px;">Copy Prompt</button>
+              </div>
+              <textarea id="txtRepairPrompt" readonly style="width: 100%; height: 130px; font-family: var(--font-mono); font-size: 11px; background: var(--bg-base); color: var(--text-main); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px; resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
           </div>
         </div>
 
@@ -612,9 +623,12 @@
           </p>
           <div class="form-group">
             <label for="selectBaselineScan">Target Baseline Scan</label>
-            <select id="selectBaselineScan">
-              <option value="">-- No baseline scans available --</option>
-            </select>
+            <div style="display: flex; gap: 8px;">
+              <select id="selectBaselineScan" style="flex: 1;">
+                <option value="">-- No baseline scans available --</option>
+              </select>
+              <button class="btn-secondary" onclick="loadRemediationProposals(document.getElementById('selectBaselineScan').value)" style="padding: 4px 10px; font-size: 11px; white-space: nowrap;">Review Proposals</button>
+            </div>
           </div>
           <div class="form-group">
             <label for="rescanFileInput">Corrected Archive (.zip)</label>
@@ -627,10 +641,53 @@
       </div>
     </section>
 
-    <!-- Section 3: Comparison Results Dashboard -->
+    <!-- Section 3: Remediation Proposals & Human Review Gate -->
+    <section id="remediationSection" style="display: none;">
+      <div class="section-title">
+        <span>03</span> Human-in-the-Loop Remediation Review & Sandbox Isolation
+      </div>
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h3 style="font-size: 14px; font-weight: 700; color: var(--text-main);">Proposals for Scan: <span id="lblRemediationScanId" style="font-family: var(--font-mono); color: var(--accent);"></span></h3>
+            <p id="lblAdvisoryNotice" style="font-size: 12px; color: var(--color-warn); margin-top: 4px;">
+              Remediation proposals are advisory-only. Source code cannot be modified without explicit human approval.
+            </p>
+          </div>
+          <button class="btn-secondary" onclick="toggleSelectAllProposals()" style="padding: 6px 12px; font-size: 12px;">Select / Deselect All</button>
+        </div>
+
+        <div id="proposalsListContainer" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;"></div>
+
+        <!-- Human Approval Gate -->
+        <div style="background: var(--bg-elevated); padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-main); cursor: pointer;">
+            <input type="checkbox" id="chkConfirmHumanApproval" style="width: 16px; height: 16px; cursor: pointer;">
+            I confirm explicit human approval to apply selected fixes strictly to an isolated sandbox copy.
+          </label>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Safety Invariant: Original source directory and git repository remain untouched. Changes are applied solely to an ephemeral, isolated workspace.
+          </div>
+          <div>
+            <button id="btnApplyRemediation" onclick="applyApprovedRemediations()" style="padding: 8px 16px; font-size: 13px; font-weight: 600; background: #2563eb; color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+              Apply Approved Fixes (Isolated Sandbox)
+            </button>
+          </div>
+        </div>
+
+        <!-- Remediation Apply Result Banner -->
+        <div id="remediationApplyResult" style="display: none; margin-top: 14px; padding: 12px; background: var(--bg-surface); border: 1px solid var(--color-pass-border); border-radius: var(--radius-sm); font-size: 12px;">
+          <div style="font-weight: 700; color: var(--color-pass);" id="lblApplyResultStatus"></div>
+          <div style="margin-top: 4px; color: var(--text-muted);">Isolated Workspace: <code id="lblIsolatedWorkspace" style="color: var(--accent);"></code></div>
+          <div style="margin-top: 4px; color: var(--text-dim);" id="lblApplyAuditNote"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Comparison Results Dashboard -->
     <section id="resultsSection" style="display: none;">
       <div class="section-title">
-        <span>03</span> Verification Findings & Diff Inspection
+        <span>04</span> Verification Findings & Diff Inspection
       </div>
       <div class="card">
         <!-- Summary Counts -->
@@ -704,6 +761,9 @@
     const API_BASE = '/api/v1';
     let currentComparison = null;
     let availableScans = [];
+    let currentScanId = null;
+    let currentRepairPrompt = null;
+    let currentProposals = [];
 
     // Initialize Dashboard
     document.addEventListener('DOMContentLoaded', () => {
@@ -768,6 +828,9 @@
             ${escapeHtml(s.project || 'Project')} — ${s.scan_id.substring(0, 16)}... (${s.findings ? s.findings.length : 0} findings)
           </option>
         `).join('');
+        if (!currentScanId && availableScans.length > 0) {
+          currentScanId = availableScans[0].scan_id;
+        }
       } catch (err) {
         console.warn('Could not load scans list:', err);
       }
@@ -801,6 +864,9 @@
         }
 
         const scan = await res.json();
+        currentScanId = scan.scan_id;
+        currentRepairPrompt = scan.repair_prompt || '';
+        document.getElementById('txtRepairPrompt').value = currentRepairPrompt;
         showSuccess(`Baseline scan ${scan.scan_id} completed successfully.`);
 
         // Display scan metadata
@@ -817,6 +883,152 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'Execute Baseline Security Scan';
+      }
+    }
+
+    async function toggleRepairPrompt() {
+      const box = document.getElementById('repairPromptBox');
+      if (box.style.display === 'none') {
+        if (!currentRepairPrompt && currentScanId) {
+          try {
+            const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(currentScanId)}/repair-prompt`);
+            if (res.ok) {
+              const data = await res.json();
+              currentRepairPrompt = data.repair_prompt || '';
+              document.getElementById('txtRepairPrompt').value = currentRepairPrompt;
+            }
+          } catch (e) {
+            console.warn('Failed to fetch repair prompt', e);
+          }
+        }
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    }
+
+    function copyRepairPrompt() {
+      const txt = document.getElementById('txtRepairPrompt').value;
+      if (!txt) {
+        showError('No repair prompt available to copy.');
+        return;
+      }
+      navigator.clipboard.writeText(txt).then(() => {
+        showSuccess('Remediation prompt copied to clipboard.');
+      }).catch(() => {
+        showSuccess('Prompt ready for manual copy.');
+      });
+    }
+
+    async function loadRemediationProposals(scanId) {
+      if (!scanId) {
+        showError('Please select or execute a baseline scan first.');
+        return;
+      }
+      currentScanId = scanId;
+      const section = document.getElementById('remediationSection');
+      const container = document.getElementById('proposalsListContainer');
+      document.getElementById('lblRemediationScanId').textContent = scanId;
+      document.getElementById('remediationApplyResult').style.display = 'none';
+      document.getElementById('chkConfirmHumanApproval').checked = false;
+
+      try {
+        const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(scanId)}/remediation/proposals`);
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          throw new Error(err.detail || `Failed to fetch proposals: ${res.status}`);
+        }
+        const data = await res.json();
+        currentProposals = data.proposals || [];
+
+        if (currentProposals.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state" style="padding: 20px;">
+              <div class="empty-icon">✓</div>
+              <div>No remediation proposals needed or available for this scan.</div>
+            </div>
+          `;
+        } else {
+          container.innerHTML = currentProposals.map(p => `
+            <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; display: flex; gap: 12px; align-items: flex-start;">
+              <input type="checkbox" class="prop-checkbox" value="${escapeHtml(p.proposal_id)}" checked style="margin-top: 4px; width: 16px; height: 16px; cursor: pointer;">
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent);">${escapeHtml(p.rule_id)} &bull; ${escapeHtml(p.file_path)}</span>
+                  <span class="status-pill status-${p.severity ? p.severity.toUpperCase() : 'MEDIUM'}">${escapeHtml((p.severity || 'medium').toUpperCase())}</span>
+                </div>
+                <div style="font-weight: 600; font-size: 13px; color: var(--text-main); margin-bottom: 4px;">${escapeHtml(p.title)}</div>
+                <div style="font-size: 12px; color: var(--text-muted); background: var(--bg-elevated); padding: 8px 10px; border-radius: 4px; border: 1px solid var(--border); font-family: var(--font-mono); white-space: pre-wrap;">${escapeHtml(p.proposed_action)}</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        section.style.display = 'block';
+        section.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        showError(`Error loading proposals: ${err.message}`);
+      }
+    }
+
+    function toggleSelectAllProposals() {
+      const boxes = document.querySelectorAll('.prop-checkbox');
+      if (boxes.length === 0) return;
+      const allChecked = Array.from(boxes).every(b => b.checked);
+      boxes.forEach(b => { b.checked = !allChecked; });
+    }
+
+    async function applyApprovedRemediations() {
+      if (!currentScanId) {
+        showError('No active baseline scan ID found.');
+        return;
+      }
+      const confirmed = document.getElementById('chkConfirmHumanApproval').checked;
+      const selectedBoxes = Array.from(document.querySelectorAll('.prop-checkbox:checked'));
+      const approvedIds = selectedBoxes.map(b => b.value);
+
+      if (approvedIds.length === 0) {
+        showError('Please select at least one proposal to apply.');
+        return;
+      }
+
+      if (!confirmed) {
+        showError('Explicit human approval required: Please check the approval confirmation box.');
+        return;
+      }
+
+      const btn = document.getElementById('btnApplyRemediation');
+      btn.disabled = true;
+      btn.textContent = 'Applying to isolated sandbox...';
+
+      try {
+        const res = await fetch(`${API_BASE}/scans/${encodeURIComponent(currentScanId)}/remediation/apply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            approved_proposal_ids: approvedIds,
+            confirm_approval: true,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
+          throw new Error(errData.detail || `Apply failed with status ${res.status}`);
+        }
+
+        const result = await res.json();
+        showSuccess(`Applied ${result.applied_count} proposal(s) to isolated sandbox.`);
+
+        const resBox = document.getElementById('remediationApplyResult');
+        document.getElementById('lblApplyResultStatus').textContent = `Applied ${result.applied_count} proposal(s) successfully (${result.rejected_count} unapproved/rejected).`;
+        document.getElementById('lblIsolatedWorkspace').textContent = result.isolated_workspace;
+        document.getElementById('lblApplyAuditNote').textContent = result.audit_note;
+        resBox.style.display = 'block';
+      } catch (err) {
+        showError(`Remediation apply error: ${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Apply Approved Fixes (Isolated Sandbox)';
       }
     }
 

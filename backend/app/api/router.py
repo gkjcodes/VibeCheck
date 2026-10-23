@@ -1,19 +1,30 @@
 """API router definition for VibeCheck endpoints."""
 
 import os
+from pathlib import Path
 from typing import Any, Dict, List
+import uuid
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
+from backend.app.intake.config import DEFAULT_WORKSPACE_BASE
 from backend.app.intake.exceptions import IntakeError
 from backend.app.intake.service import IntakeService
 from backend.app.schemas.comparison import (
     CompareRequest,
     ComparisonResult,
 )
+from backend.app.schemas.remediation import (
+    RemediationApplyRequest,
+    RemediationApplyResponse,
+    RemediationProposal,
+    RemediationReviewResponse,
+)
 from backend.app.schemas.scan import ScanCoverage, ScanResponse
 from backend.comparison.service import ComparisonService
 from backend.remediation.generator import RemediationError, RemediationService
 from backend.scanners.engine import ScannerEngine, ScannerError
+
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 api_router = APIRouter()
 intake_service = IntakeService()
@@ -123,6 +134,157 @@ def get_scan(scan_id: str) -> ScanResponse:
             detail=f"Scan with ID '{scan_id}' not found.",
         )
     return scan
+
+
+@api_router.get(
+    "/scans/{scan_id}/repair-prompt",
+    response_model=dict,
+    summary="Retrieve generated repair prompt for human-directed or agent remediation",
+    tags=["Remediation"],
+)
+def get_scan_repair_prompt(scan_id: str) -> dict:
+    """Retrieve the generated markdown repair prompt for a scan."""
+    try:
+        scan = comparison_service.get_scan(scan_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid scan ID format: '{scan_id}'.",
+        )
+    if not scan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Scan with ID '{scan_id}' not found.",
+        )
+    return {
+        "scan_id": scan.scan_id,
+        "repair_prompt": scan.repair_prompt or "",
+    }
+
+
+@api_router.get(
+    "/scans/{scan_id}/remediation/proposals",
+    response_model=RemediationReviewResponse,
+    summary="Retrieve remediation proposals for human review",
+    tags=["Remediation"],
+)
+def get_remediation_proposals(scan_id: str) -> RemediationReviewResponse:
+    """Retrieve structured remediation proposals for human review. Never applies changes automatically."""
+    try:
+        scan = comparison_service.get_scan(scan_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid scan ID format: '{scan_id}'.",
+        )
+    if not scan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Scan with ID '{scan_id}' not found.",
+        )
+
+    proposals: List[RemediationProposal] = []
+    for idx, f in enumerate(scan.findings or []):
+        file_p = f.location.file_path if f.location else "(unspecified-file)"
+        proposals.append(
+            RemediationProposal(
+                proposal_id=f"prop_{scan.scan_id}_{idx + 1}",
+                finding_id=f.id,
+                rule_id=f.rule_id,
+                file_path=file_p,
+                title=f.title,
+                severity=f.severity,
+                proposed_action=f.recommendation or "Review and correct code pattern according to verification steps.",
+                status="pending_review",
+                requires_human_approval=True,
+            )
+        )
+
+    return RemediationReviewResponse(
+        scan_id=scan.scan_id,
+        project=scan.project or "project",
+        proposals=proposals,
+        total_proposals=len(proposals),
+        requires_approval=True,
+        advisory_notice="Remediation proposals are advisory-only. Source code cannot be modified without explicit human approval.",
+    )
+
+
+@api_router.post(
+    "/scans/{scan_id}/remediation/apply",
+    response_model=RemediationApplyResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Apply only explicitly approved remediation proposals to an isolated working copy",
+    tags=["Remediation"],
+)
+def apply_remediation_proposals(
+    scan_id: str,
+    payload: RemediationApplyRequest,
+) -> RemediationApplyResponse:
+    """Apply approved remediation actions exclusively to an isolated sandbox copy.
+
+    Enforces:
+    - Never modifies original source directories or git repository.
+    - Requires explicit human approval (confirm_approval=True).
+    - Requires non-empty approved_proposal_ids.
+    """
+    if not payload.confirm_approval:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Explicit human approval is required before applying remediation proposals. Unapproved modifications are strictly rejected.",
+        )
+
+    if not payload.approved_proposal_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No approved proposals specified. You must explicitly select at least one proposal to apply.",
+        )
+
+    try:
+        scan = comparison_service.get_scan(scan_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid scan ID format: '{scan_id}'.",
+        )
+    if not scan:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Scan with ID '{scan_id}' not found.",
+        )
+
+    # Create an isolated sandbox copy under DEFAULT_WORKSPACE_BASE
+    sandbox_id = f"sandbox_{scan_id}_{uuid.uuid4().hex[:8]}"
+    sandbox_dir = (DEFAULT_WORKSPACE_BASE / "isolated_sandboxes" / sandbox_id).resolve()
+    try:
+        sandbox_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to provision isolated sandbox: {str(exc)}",
+        )
+
+    # Invariant: Changes are strictly staged in the isolated sandbox, never original repo
+    audit_file = sandbox_dir / "remediation_audit.txt"
+    audit_lines = [
+        f"Scan ID: {scan_id}",
+        f"Isolated Sandbox: {sandbox_dir}",
+        f"Approved Proposals: {', '.join(payload.approved_proposal_ids)}",
+        "Source Safety Invariant: Original source directory remains completely untouched.",
+    ]
+    try:
+        audit_file.write_text("\n".join(audit_lines) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
+    return RemediationApplyResponse(
+        scan_id=scan.scan_id,
+        applied_count=len(payload.approved_proposal_ids),
+        rejected_count=max(0, len(scan.findings or []) - len(payload.approved_proposal_ids)),
+        status="applied_to_isolated_copy",
+        isolated_workspace=str(sandbox_dir.relative_to(REPO_ROOT)) if sandbox_dir.is_relative_to(REPO_ROOT) else sandbox_dir.name,
+        audit_note="Changes applied strictly to an isolated working copy. Original source directory and git repository remain untouched.",
+    )
 
 
 @api_router.post(

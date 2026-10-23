@@ -9,6 +9,7 @@ from scripts.checkpoints.common import CheckStatus, REPO_ROOT
 from scripts.checkpoints.phase1 import Phase1Check
 from scripts.checkpoints.phase2 import Phase2Check
 from scripts.checkpoints.phase3 import Phase3Check
+from scripts.checkpoints.phase6 import Phase6Check
 
 
 def test_phase_registry_contains_all_seven_phases():
@@ -96,12 +97,32 @@ def test_phase_check_cli_phase_5_passes():
     assert "Rescan Comparison & Verification" in proc.stdout
 
 
+def test_phase_6_checks_pass():
+    """Verify that Phase 6 programmatic execution passes completely."""
+    results = Phase6Check.run_all()
+    assert len(results) == 7
+    for result in results:
+        assert (
+            result.status == CheckStatus.PASS
+        ), f"Phase 6 check failed: {result.name} - {result.details}"
+
+
+def test_phase_check_cli_phase_6_passes():
+    """Run `scripts/phase_check.py 6` via subprocess and assert exit code 0."""
+    script_path = REPO_ROOT / "scripts" / "phase_check.py"
+    cmd = [sys.executable, str(script_path), "6"]
+    proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
+    assert proc.returncode == 0, f"Expected 0, got {proc.returncode}: {proc.stderr}"
+    assert "Result: PASSED" in proc.stdout
+    assert "End-to-End MVP Integration" in proc.stdout
+
+
 def test_phase_check_cli_dashboard_no_args():
     """Run `scripts/phase_check.py` with no args and assert dashboard output."""
     script_path = REPO_ROOT / "scripts" / "phase_check.py"
     cmd = [sys.executable, str(script_path)]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
-    # Exits 1 because phases 6-7 are not yet passing
+    # Exits 1 because phase 7 is not yet passing
     assert proc.returncode == 1
     assert "All-Phase Status Dashboard" in proc.stdout
     assert "Phase 1: Foundation & Contracts" in proc.stdout
@@ -109,8 +130,9 @@ def test_phase_check_cli_dashboard_no_args():
     assert "Phase 3: Security Scanner Integration" in proc.stdout
     assert "Phase 4: Findings & Consolidated Remediation" in proc.stdout
     assert "Phase 5: Rescan Comparison & Verification" in proc.stdout
-    assert "5/7 phases passed" in proc.stdout
-    assert "Next Phase:      Phase 6: End-to-End MVP Integration" in proc.stdout
+    assert "Phase 6: End-to-End MVP Integration" in proc.stdout
+    assert "6/7 phases passed" in proc.stdout
+    assert "Next Phase:      Phase 7: Production Readiness & Release Gate" in proc.stdout
 
 
 def test_phase_check_cli_dashboard_all_flag():
@@ -120,9 +142,9 @@ def test_phase_check_cli_dashboard_all_flag():
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=REPO_ROOT)
     assert proc.returncode == 1
     assert "All-Phase Status Dashboard" in proc.stdout
-    assert "Phase 5: Rescan Comparison & Verification" in proc.stdout
-    assert "5/7 phases passed" in proc.stdout
-    assert "Next Phase:      Phase 6: End-to-End MVP Integration" in proc.stdout
+    assert "Phase 6: End-to-End MVP Integration" in proc.stdout
+    assert "6/7 phases passed" in proc.stdout
+    assert "Next Phase:      Phase 7: Production Readiness & Release Gate" in proc.stdout
 
 
 def test_phase_check_cli_invalid_phase_number():
